@@ -1,1 +1,1 @@
-# rug-locomotion-ppo
+# rug-locomotion-ppg
