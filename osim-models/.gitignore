@@ -1,0 +1,6 @@
+Geometry/*
+!Geometry/README.txt
+
+*.osim
+!healthy_terrain.osim
+!healthy-andrei.osim
