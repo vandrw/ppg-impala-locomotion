@@ -68,7 +68,6 @@ class PhasicValueModel(PhasicModel):
         self,
         obtype,
         actype,
-        enc_fn,
         arch="dual",  # shared, detach, dual
     ):
         super().__init__()
@@ -88,7 +87,6 @@ class PhasicValueModel(PhasicModel):
             assert False
 
         vf_keys = vf_keys or [true_vf_key]
-        self.pi_enc = enc_fn(obtype)
         self.pi_key = pi_key
         self.true_vf_key = true_vf_key
         self.vf_keys = vf_keys
@@ -96,16 +94,11 @@ class PhasicValueModel(PhasicModel):
         self.detach_value_head = detach_value_head
         pi_outsize, self.make_distr = distr_builder(actype)
 
-        for k in self.enc_keys:
-            self.set_encoder(k, enc_fn(obtype))
-
         for k in self.vf_keys:
-            lastsize = self.get_encoder(k).codetype.size
-            self.set_vhead(k, tu.NormedLinear(lastsize, 1, scale=0.1))
+            self.set_vhead(k, tu.NormedLinear(obtype.shape, 1, scale=0.1))
 
-        lastsize = self.get_encoder(self.pi_key).codetype.size
-        self.pi_head = tu.NormedLinear(lastsize, pi_outsize, scale=0.1)
-        self.aux_vf_head = tu.NormedLinear(lastsize, 1, scale=0.1)
+        self.pi_head = tu.NormedLinear(obtype.shape, pi_outsize, scale=0.1)
+        self.aux_vf_head = tu.NormedLinear(obtype.shape, 1, scale=0.1)
 
     def compute_aux_loss(self, aux, seg):
         vtarg = seg["vtarg"]
@@ -120,12 +113,6 @@ class PhasicValueModel(PhasicModel):
 
         return x
 
-    def get_encoder(self, key):
-        return getattr(self, key + "_enc")
-
-    def set_encoder(self, key, enc):
-        setattr(self, key + "_enc", enc)
-
     def get_vhead(self, key):
         return getattr(self, key + "_vhead")
 
@@ -137,7 +124,8 @@ class PhasicValueModel(PhasicModel):
         x_out = {}
 
         for k in self.enc_keys:
-            x_out[k], state_out[k] = self.get_encoder(k)(ob, first, state_in[k])
+            x_out[k] = ob
+            state_out[k] = state_in[k]
             x_out[k] = self.reshape_x(x_out[k])
 
         pi_x = x_out[self.pi_key]
@@ -155,7 +143,7 @@ class PhasicValueModel(PhasicModel):
         return pd, vfvec, aux, state_out
 
     def initial_state(self, batchsize):
-        return {k: self.get_encoder(k).initial_state(batchsize) for k in self.enc_keys}
+        return {k: tu.zeros(batchsize, 0) for k in self.enc_keys}
 
     def aux_keys(self):
         return ["vtarg"]

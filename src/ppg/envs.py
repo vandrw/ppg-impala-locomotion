@@ -1,20 +1,35 @@
-import numpy as np
-import gym3
-from procgen import ProcgenGym3Env
+from pathlib import Path
 
-def get_procgen_venv(*, env_id, num_envs, rendering=False, **env_kwargs):
-    if rendering:
-        env_kwargs["render_human"] = True
+PROJECT_ROOT = Path(__file__).resolve().parent.parent.parent
+DEFAULT_MODELS_DIR = PROJECT_ROOT / "osim-models"
+DEFAULT_DATA_DIR = PROJECT_ROOT / "data"
 
-    env = ProcgenGym3Env(num=num_envs, env_name=env_id, **env_kwargs)
 
-    env = gym3.ExtractDictObWrapper(env, "rgb")
+def get_venv(name, visualize=False, **env_kwargs):
+    # venv = get_procgen_venv(env_id=env_name, **env_kwargs)
+    if name == "healthy":
+        from src.envs.healthy_env import HealthyOpenSimEnv
 
-    if rendering:
-        env = gym3.ViewerWrapper(env, info_key="rgb")
-    return env
+        model_path = DEFAULT_MODELS_DIR / "healthy-andrei.osim"
+        data_path = DEFAULT_DATA_DIR / "AB06.csv"
 
-def get_venv(num_envs, env_name, **env_kwargs):
-    venv = get_procgen_venv(num_envs=num_envs, env_id=env_name, **env_kwargs)
+        return HealthyOpenSimEnv(
+            visualize=visualize,
+            model_path=model_path,
+            data_path=data_path,
+            data_start_time=7.0,
+            data_tempo=0.9,
+        )
+    elif name == "prosthesis":
+        from src.envs.prosthesis_env import ProsthesisOpenSimEnv
 
-    return venv
+        model_path = DEFAULT_MODELS_DIR / "OS4_gait14dof15musc_2act_LTFP_VR.osim"
+        data_path = DEFAULT_DATA_DIR / "new.csv"
+
+        return ProsthesisOpenSimEnv(
+            visualize=visualize,
+            model_path=model_path,
+            data_path=data_path,
+            data_start_time=7.0,
+            data_tempo=0.9,
+        )

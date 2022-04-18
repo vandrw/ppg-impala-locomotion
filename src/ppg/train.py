@@ -6,14 +6,14 @@ from .impala_cnn import ImpalaEncoder
 from . import logger
 from .envs import get_venv
 
-def train_fn(env_name="coinrun",
-    distribution_mode="hard",
+def train_fn(env_name="healthy",
+    # distribution_mode="hard",
     arch="dual",  # 'shared', 'detach', or 'dual'
     # 'shared' = shared policy and value networks
     # 'dual' = separate policy and value networks
     # 'detach' = shared policy and value networks, but with the value function gradient detached during the policy phase to avoid interference
     interacts_total=100_000_000,
-    num_envs=64,
+    # num_envs=64,
     n_epoch_pi=1,
     n_epoch_vf=1,
     gamma=.999,
@@ -38,14 +38,14 @@ def train_fn(env_name="coinrun",
         format_strs = ['csv', 'stdout'] if comm.Get_rank() == 0 else []
         logger.configure(comm=comm, dir=log_dir, format_strs=format_strs)
 
-    venv = get_venv(num_envs=num_envs, env_name=env_name, distribution_mode=distribution_mode)
+    venv = get_venv(name=env_name)
 
     enc_fn = lambda obtype: ImpalaEncoder(
         obtype.shape,
         outsize=256,
-        chans=(16, 32, 32),
+        chans=(116,),
     )
-    model = ppg.PhasicValueModel(venv.ob_space, venv.ac_space, enc_fn, arch=arch)
+    model = ppg.PhasicValueModel(venv.observation_space, venv.action_space, arch=arch)
 
     model.to(tu.dev())
     logger.log(tu.format_model(model))
@@ -78,14 +78,14 @@ def train_fn(env_name="coinrun",
 
 def main():
     parser = argparse.ArgumentParser(description='Process PPG training arguments.')
-    parser.add_argument('--env_name', type=str, default='coinrun')
-    parser.add_argument('--num_envs', type=int, default=64)
-    parser.add_argument('--n_epoch_pi', type=int, default=1)
-    parser.add_argument('--n_epoch_vf', type=int, default=1)
-    parser.add_argument('--n_aux_epochs', type=int, default=6)
-    parser.add_argument('--n_pi', type=int, default=32)
-    parser.add_argument('--clip_param', type=float, default=0.2)
-    parser.add_argument('--kl_penalty', type=float, default=0.0)
+    parser.add_argument('--env-name', type=str, default='coinrun')
+    # parser.add_argument('--num-envs', type=int, default=64)
+    parser.add_argument('--n-epoch-pi', type=int, default=1)
+    parser.add_argument('--n-epoch-vf', type=int, default=1)
+    parser.add_argument('--n-aux-epochs', type=int, default=6)
+    parser.add_argument('--n-pi', type=int, default=32)
+    parser.add_argument('--clip-param', type=float, default=0.2)
+    parser.add_argument('--kl-penalty', type=float, default=0.0)
     parser.add_argument('--arch', type=str, default='dual') # 'shared', 'detach', or 'dual'
 
     args = parser.parse_args()
@@ -94,7 +94,7 @@ def main():
 
     train_fn(
         env_name=args.env_name,
-        num_envs=args.num_envs,
+        # num_envs=args.num_envs,
         n_epoch_pi=args.n_epoch_pi,
         n_epoch_vf=args.n_epoch_vf,
         n_aux_epochs=args.n_aux_epochs,
