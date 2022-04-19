@@ -11,11 +11,10 @@ sudo apt install libxi-dev libxmu-dev liblapack-dev libadolc2 coinor-libipopt1v5
 For Arch-based distributions:
 
 ```
-yay -S lapack-tmg
 sudo pacman -S gcc gcc-fortran
 conda install -c conda-forge libgfortran4
 
-export LD_LIBRARY_PATH=$HOME/miniconda3/envs/opensim/adol-c/lib64/:$HOME/miniconda3/envs/opensim/ipopt/lib/:$HOME/.cache/yay/lapack-tmg/src/build/lib/:$LD_LIBRARY_PATH
+export LD_LIBRARY_PATH=$CONDA_PREFIX/lib:$CONDA_PREFIX/adol-c/lib64/:$CONDA_PREFIX/ipopt/lib/:$LD_LIBRARY_PATH
 ```
 
 Install OpenSim using conda:
@@ -33,4 +32,9 @@ Install PPG:
 git clone https://github.com/openai/phasic-policy-gradient.git
 conda env update --file phasic-policy-gradient/environment.yml
 pip install -e phasic-policy-gradient
+```
+
+To run a training process, run the following:
+```
+python3 -m src.ppg.train --env-name healthy
 ```

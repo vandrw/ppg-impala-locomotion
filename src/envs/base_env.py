@@ -3,7 +3,7 @@ from dataclasses import asdict
 from time import time
 from pathlib import Path
 
-from gym3 import Env
+from gym import Env
 from opensim import Model, PrescribedController, Constant, Manager
 import pandas as pd
 

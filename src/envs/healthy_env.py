@@ -2,7 +2,7 @@
 
 from math import sqrt, atan2, pi, sin, cos
 
-from gym3.types import TensorType
+from gym import spaces
 from opensim import (
     Vec3,
 )
@@ -39,8 +39,8 @@ def soft_clip_penalty_to_reward(penalty, softness, reward_max):
 
 class HealthyOpenSimEnv(BaseOpenSimEnv):
     def __init__(self, *args, **kwargs):
-        self.observation_space = TensorType(float, (116,))
-        self.action_space = TensorType(float, (18,))
+        self.observation_space = spaces.Box(-10, 10, shape=(116,))
+        self.action_space = spaces.Box(0, 1, shape=(18,))
 
         data_path = kwargs.pop("data_path")
         data_start_time = kwargs.pop("data_start_time", 0)

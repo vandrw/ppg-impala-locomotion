@@ -4,7 +4,7 @@ import importlib
 import gym
 
 PROJECT_ROOT = Path(__file__).resolve().parent.parent
-DEFAULT_MODELS_DIR = PROJECT_ROOT / "opensim-models"
+DEFAULT_MODELS_DIR = PROJECT_ROOT / "osim-models"
 DEFAULT_DATA_DIR = PROJECT_ROOT / "data"
 
 
