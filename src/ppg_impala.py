@@ -471,7 +471,7 @@ def plot(datas):
     plt.plot()
     plt.xlabel('Episode')
     plt.ylabel('Datas')
-    plt.show()
+    plt.savefig("output/datas.png")
 
     print('Max :', np.max(datas))
     print('Min :', np.min(datas))
