@@ -597,22 +597,6 @@ class Runner:
 
         return self.agent.get_all(), i_episode, total_reward, eps_time, self.tag
 
-def _parse_args(parser):
-    # Do we have a config file to parse?
-    args_config, remaining = parser.parse_known_args()
-    if args_config.config:
-        with open(args_config.config, 'r') as f:
-            cfg = yaml.safe_load(f)
-            parser.set_defaults(**cfg)
-
-    # The main arg parser parses the rest of the args, the usual
-    # defaults will have been overridden if config file specified.
-    args = parser.parse_args(remaining)
-
-    # Cache the args as a text string to save them in the output dir later
-    args_text = yaml.safe_dump(args.__dict__, default_flow_style=False)
-    return args, args_text
-
 def init_output(run_name):
     global _logger
     global output_path
@@ -623,11 +607,11 @@ def init_output(run_name):
 
     _logger.info("Saving configuration in {str}/{str}.".format(output_path, "train.log"))
 
-    with open(os.path.join(output_path, 'config.yaml'), 'w') as f:
-        f.write(args_text)
-
 def main(args):
     init_output(args.run_name)
+
+    with open(os.path.join(output_path, 'config.yaml'), 'w') as f:
+        f.write(yaml.safe_dump(args.__dict__, default_flow_style=False))
 
     continue_run = (os.path.join(output_path, "agent.pth")).exists()
     if continue_run:
@@ -715,6 +699,20 @@ def main(args):
         timedelta = finish - start
         _logger.info("Time: {}".format(str(datetime.timedelta(seconds=timedelta))))
 
+def _parse_args(parser):
+    # Do we have a config file to parse?
+    args_config, remaining = parser.parse_known_args()
+    if args_config.config:
+        with open(args_config.config, 'r') as f:
+            cfg = yaml.safe_load(f)
+            parser.set_defaults(**cfg)
+
+    # The main arg parser parses the rest of the args, the usual
+    # defaults will have been overridden if config file specified.
+    args = parser.parse_args(remaining)
+
+    return args
+
 if __name__ == "__main__":
     parser = argparse.ArgumentParser(
         description="PyTorch implementation of Phasic Policy Gradient for training Physics based Musculoskeletal Models."
@@ -733,8 +731,7 @@ if __name__ == "__main__":
     parser.add_argument(
         "--run-name",
         type=str,
-        help="Display name to use in wandb. Also used for the path to save the model. Provide a unique name.",
-        required=True
+        help="Display name to use in wandb. Also used for the path to save the model. Provide a unique name."
     )
     parser.add_argument(
         "--log-wandb",
@@ -836,5 +833,5 @@ if __name__ == "__main__":
         help="TODO."
     )
 
-    args, args_text = _parse_args(parser)
+    args = _parse_args(parser)
     main(args)
