@@ -15,6 +15,6 @@ export LD_LIBRARY_PATH=/data/$USER/.libs/opensim_dependencies/ipopt/lib:/data/$U
 
 cd rug-locomotion-ppg
 
-python -m src.ppg_impala --run-name healthy_ppg
+python -m src.ppg_impala -c configs/default.yml --run-name test_healthy_ppg
 
 conda deactivate
