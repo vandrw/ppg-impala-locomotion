@@ -607,7 +607,8 @@ def init_output(run_name):
     if not os.path.exists(output_path):
         os.mkdir(output_path)
 
-    logger = logging.basicConfig(filename=os.path.join(output_path, "train.log"))
+    logging.basicConfig(filename=os.path.join(output_path, "train.log"), filemode='w')
+    logger = logging.getLogger()
 
     return logger, output_path
 
