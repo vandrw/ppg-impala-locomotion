@@ -8,14 +8,13 @@
 #SBATCH --gres=gpu:v100:1
 
 module purge
-module load PyTorch/1.10.0-fosscuda-2020b CMake/3.20.1-GCCcore-10.2.0 Eigen/3.3.8-GCCcore-10.2.0 SWIG/4.0.2-GCCcore-10.2.0 OpenBLAS/0.3.12-GCC-10.2.0
+module load PyTorch/1.10.0-fosscuda-2020b
 
-conda activate opensim
-
-export LD_LIBRARY_PATH=$CONDA_PREFIX/lib:$CONDA_PREFIX/adol-c/lib64/:$CONDA_PREFIX/ipopt/lib/:$LD_LIBRARY_PATH
+source /data/$USER/.envs/osim/bin/activate
+export LD_LIBRARY_PATH=/data/$USER/.libs/opensim_dependencies/ipopt/lib:/data/$USER/.libs/opensim_dependencies/adol-c/lib64:$LD_LIBRARY_PATH
 
 cd rug-locomotion-ppg
 
-python -m src.ppg_impala
+python -m src.ppg_impala --run-name healthy_ppg
 
 conda deactivate
