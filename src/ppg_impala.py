@@ -31,9 +31,6 @@ except ImportError:
 device = torch.device("cuda:0" if torch.cuda.is_available() else "cpu")
 dataType = torch.cuda.FloatTensor if torch.cuda.is_available() else torch.FloatTensor
 
-_logger = None
-output_path = None
-
 class Policy_Model(nn.Module):
     def __init__(self, state_dim, action_dim, myDevice=None):
         super(Policy_Model, self).__init__()
@@ -496,8 +493,8 @@ class Learner:
         # Copy new weights into old policy:
         self.policy_old.load_state_dict(self.policy.state_dict())
 
-    def save_weights(self):
-        torch.save(self.policy.state_dict(), os.path.join(output_path, "agent.pth"))
+    def save_weights(self, path):
+        torch.save(self.policy.state_dict(), os.path.join(path, "agent.pth"))
 
 
 class Agent:
@@ -538,13 +535,13 @@ class Agent:
     def set_weights(self, weights):
         self.policy.load_state_dict(weights)
 
-    def load_weights(self):
-        self.policy.load_state_dict(torch.load(os.path.join(output_path, "agent.pth"), map_location=self.device))
+    def load_weights(self, path):
+        self.policy.load_state_dict(torch.load(os.path.join(path, "agent.pth"), map_location=self.device))
 
 
 @ray.remote
 class Runner:
-    def __init__(self, experiment_type, training_mode, render, n_update, tag):
+    def __init__(self, experiment_type, training_mode, render, n_update, tag, logger, save_path):
         env_name = load_ppg_env(experiment_type, visualize=render)
         self.env = gym.make(env_name)
         self.states = self.env.reset()
@@ -558,8 +555,12 @@ class Runner:
         self.n_update = n_update
         self.max_action = 1.0
 
+        self.logger = logger
+        self.save_path = save_path
+
     def run_episode(self, i_episode, total_reward, eps_time):
-        self.agent.load_weights()
+
+        self.agent.load_weights(self.output_path)
 
         for _ in range(self.n_update):
             action, action_mean = self.agent.act(self.states)
@@ -586,7 +587,7 @@ class Runner:
                 self.states = self.env.reset()
                 i_episode += 1
 
-                _logger.info(
+                self.log(
                     "Episode {} \t t_reward: {} \t time: {} \t process no: {} \t".format(
                         i_episode, total_reward, eps_time, self.tag
                     )
@@ -596,28 +597,30 @@ class Runner:
                 eps_time = 0
 
         return self.agent.get_all(), i_episode, total_reward, eps_time, self.tag
+    
+    def log(self, msg):
+        self.logger.info(msg)
 
 def init_output(run_name):
-    global _logger
-    global output_path
-
     output_path = os.path.join("output", run_name)
 
-    os.mkdir(output_path)
+    if not os.path.exists(output_path):
+        os.mkdir(output_path)
 
-    _logger = logging.basicConfig(filename=os.path.join(output_path, "train.log"), encoding='utf-8')
+    logger = logging.basicConfig(filename=os.path.join(output_path, "train.log"))
 
-    _logger.info("Saving configuration in {str}/{str}.".format(output_path, "train.log"))
+    return logger, output_path
 
 def main(args):
-    init_output(args.run_name)
+    logger, output_path = init_output(args.run_name)
 
+    logger.info("Saving configuration in {str}/{str}.".format(output_path, "train.log"))
     with open(os.path.join(output_path, 'config.yaml'), 'w') as f:
         f.write(yaml.safe_dump(args.__dict__, default_flow_style=False))
 
     continue_run = (os.path.join(output_path, "agent.pth")).exists()
     if continue_run:
-        _logger.info("Found previous model in {str}. Continuing training.".format(output_path))
+        logger.info("Found previous model in {str}. Continuing training.".format(output_path))
 
     if args.log_wandb:
         if has_wandb:
@@ -629,7 +632,7 @@ def main(args):
                     resume="must" if continue_run else "never"
                 )
         else:
-            _logger.error("You've requested to log metrics to wandb but package was not found. "
+            logger.error("You've requested to log metrics to wandb but package was not found. "
                           "Metrics not being logged to wandb, try `pip install wandb`")
     
     env_name = load_ppg_env(args.env, visualize=args.visualize)
@@ -660,10 +663,10 @@ def main(args):
 
     try:
         runners = [
-            Runner.remote(args.env, args.train_mode, args.visualize, args.n_update, i)
+            Runner.remote(args.env, args.train_mode, args.visualize, args.n_update, i, logger=logger, save_path=output_path)
             for i in range(args.n_agent)
         ]
-        learner.save_weights()
+        learner.save_weights(output_path)
 
         episode_ids = []
         for i, runner in enumerate(runners):
@@ -693,13 +696,13 @@ def main(args):
 
             learner.save_weights()
     except KeyboardInterrupt:
-        _logger.warning("Training has been stopped.")
+        logger.warning("Training has been stopped.")
     finally:
         ray.shutdown()
 
         finish = time.time()
         timedelta = finish - start
-        _logger.info("Time: {}".format(str(datetime.timedelta(seconds=timedelta))))
+        logger.info("Time: {}".format(str(datetime.timedelta(seconds=timedelta))))
 
 def _parse_args(parser, config_parser):
     # Do we have a config file to parse?
