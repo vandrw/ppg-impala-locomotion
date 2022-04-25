@@ -639,7 +639,7 @@ def main(args):
     learner = Learner(
         state_dim,
         action_dim,
-        args.test_mode,
+        args.train_mode,
         args.policy_kl_range,
         args.policy_params,
         args.value_clip,
@@ -658,7 +658,7 @@ def main(args):
 
     try:
         runners = [
-            Runner.remote(args.env, args.test_mode, args.visualize, args.n_update, i)
+            Runner.remote(args.env, args.train_mode, args.visualize, args.n_update, i)
             for i in range(args.n_agent)
         ]
         learner.save_weights()
@@ -699,9 +699,9 @@ def main(args):
         timedelta = finish - start
         _logger.info("Time: {}".format(str(datetime.timedelta(seconds=timedelta))))
 
-def _parse_args(parser):
+def _parse_args(parser, config_parser):
     # Do we have a config file to parse?
-    args_config, remaining = parser.parse_known_args()
+    args_config, remaining = config_parser.parse_known_args()
     if args_config.config:
         with open(args_config.config, 'r') as f:
             cfg = yaml.safe_load(f)
@@ -714,15 +714,18 @@ def _parse_args(parser):
     return args
 
 if __name__ == "__main__":
-    parser = argparse.ArgumentParser(
-        description="PyTorch implementation of Phasic Policy Gradient for training Physics based Musculoskeletal Models."
-    )
+    # The first arg parser parses out only the --config argument, this argument is used to
+    # load a yaml file containing key-values that override the defaults for the main parser below
+    config_parser = parser = argparse.ArgumentParser(description='Training Configuration', add_help=False)
     parser.add_argument(
-        "-c", "--config",
-        type=str,
+        '-c', '--config', 
+        type=str, 
         metavar='FILE',
         default='',
-        help="Path to the config file specifying the default parameters.."
+        help="Path to the YAML config file specifying the default parameters."
+    )
+    parser = argparse.ArgumentParser(
+        description="PyTorch implementation of Phasic Policy Gradient for training Physics based Musculoskeletal Models."
     )
     parser.add_argument(
         "--env",
@@ -731,7 +734,8 @@ if __name__ == "__main__":
     parser.add_argument(
         "--run-name",
         type=str,
-        help="Display name to use in wandb. Also used for the path to save the model. Provide a unique name."
+        help="Display name to use in wandb. Also used for the path to save the model. Provide a unique name.",
+        required=True
     )
     parser.add_argument(
         "--log-wandb",
@@ -739,9 +743,9 @@ if __name__ == "__main__":
         help="Whether to save output on wandb."
     )
     parser.add_argument(
-        "--test-mode",
-        action="store_false",
-        help="Whether to save new checkpoints during learning. If used, there will be no changes made to the model."
+        "--train-mode",
+        action="store_true",
+        help="Whether to save new checkpoints during learning. If used, there will be changes made to the model."
     )
     parser.add_argument(
         "--visualize",
@@ -833,5 +837,5 @@ if __name__ == "__main__":
         help="TODO."
     )
 
-    args = _parse_args(parser)
+    args = _parse_args(parser, config_parser)
     main(args)
