@@ -601,7 +601,7 @@ def init_output(run_name):
     if not os.path.exists(output_path):
         os.mkdir(output_path)
 
-    logging.basicConfig(filename=os.path.join(output_path, "train.log"), filemode='w', level = logging.DEBUG)
+    logging.basicConfig(filename=os.path.join(output_path, "train.log"), filemode='w', level=logging.INFO)
     logger = logging.getLogger()
 
     return logger, output_path
@@ -689,7 +689,7 @@ def main(args):
                 learner.update_aux()
                 t_aux_updates = 0
 
-            learner.save_weights()
+            learner.save_weights(output_path)
     except KeyboardInterrupt:
         logger.warning("Training has been stopped.")
     finally:
