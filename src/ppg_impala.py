@@ -603,6 +603,8 @@ def init_output(run_name):
 
     output_path = os.path.join("output", run_name)
 
+    os.mkdir(output_path)
+
     _logger = logging.basicConfig(filename=os.path.join(output_path, "train.log"), encoding='utf-8')
 
     _logger.info("Saving configuration in {str}/{str}.".format(output_path, "train.log"))
