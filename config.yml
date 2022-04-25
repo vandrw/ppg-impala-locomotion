@@ -2,6 +2,7 @@ env: "healthy"          # Which model to import ("healthy" or "prosthesis").
 
 testing_mode: False     # If you want to train the agent, set this to True. If false, no changes will be made to the model.
 visualize: False        # If you want to display the image, set this to True. Turn this off if you run this on Peregrine/Google Collab.
+log_wandb: True         # Enables logging in wandb.
 
 n_update: 1024          # How many episodes before you update the Policy. Recommended to set it to 1024 for Continuous action spaces.
 n_aux_update: 5
