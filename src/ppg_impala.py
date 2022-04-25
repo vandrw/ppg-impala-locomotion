@@ -19,13 +19,7 @@ import yaml
 import logging
 
 import ray
-
-try:
-    import wandb
-
-    has_wandb = True
-except ImportError:
-    has_wandb = False
+import wandb
 
 
 device = torch.device("cuda:0" if torch.cuda.is_available() else "cpu")
@@ -560,7 +554,7 @@ class Runner:
 
     def run_episode(self, i_episode, total_reward, eps_time):
 
-        self.agent.load_weights(self.output_path)
+        self.agent.load_weights(self.save_path)
 
         for _ in range(self.n_update):
             action, action_mean = self.agent.act(self.states)
@@ -615,24 +609,24 @@ def init_output(run_name):
 def main(args):
     logger, output_path = init_output(args.run_name)
 
-    logger.info("Saving configuration in {str}/{str}.".format(output_path, "train.log"))
+    logger.info("Saving configuration in {}/{}.".format(output_path, "train.log"))
     with open(os.path.join(output_path, 'config.yaml'), 'w') as f:
         f.write(yaml.safe_dump(args.__dict__, default_flow_style=False))
 
-    continue_run = (os.path.join(output_path, "agent.pth")).exists()
+    continue_run = os.path.exists((os.path.join(output_path, "agent.pth")))
     if continue_run:
-        logger.info("Found previous model in {str}. Continuing training.".format(output_path))
+        logger.info("Found previous model in {}. Continuing training.".format(output_path))
 
     if args.log_wandb:
-        if has_wandb:
-                wandb.init(
-                    project="rug-locomotion-ppg",
-                    config=args,
-                    name=args.run_name,
-                    id=args.run_name,
-                    resume="must" if continue_run else "never"
-                )
-        else:
+        try:
+            wandb.init(
+                project="rug-locomotion-ppg",
+                config=args,
+                name=args.run_name,
+                id=args.run_name,
+                resume="must" if continue_run else "never"
+            )
+        except ModuleNotFoundError:
             logger.error("You've requested to log metrics to wandb but package was not found. "
                           "Metrics not being logged to wandb, try `pip install wandb`")
     
