@@ -90,9 +90,8 @@ def main(args):
         args.lam,
         args.learning_rate,
     )
-    #############################################
+
     t_aux_updates = 0
-    total_steps = 0
     start = time.time()
     ray.init()
 
@@ -108,7 +107,9 @@ def main(args):
             )
             for i in range(args.n_agent)
         ]
-        # learner.save_weights(output_path)
+
+        if not continue_run:
+            learner.save_weights(output_path)
 
         episode_ids = []
         for i, runner in enumerate(runners):
@@ -148,8 +149,6 @@ def main(args):
             learner.save_weights(output_path)
 
             # Logging Epoch results
-            total_steps += args.n_update
-
             info_returns = DistributionInfo.from_array(ep_returns)
             info_lens = DistributionInfo.from_array(ep_lens)
             info_dist = DistributionInfo.from_array(epoch_ep_distances)
@@ -160,7 +159,6 @@ def main(args):
             info = EpochInfo(
                 epoch,
                 time() - start,
-                total_steps,
                 info_returns,
                 info_lens,
                 info_dist,

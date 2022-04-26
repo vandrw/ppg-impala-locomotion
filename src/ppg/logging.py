@@ -26,7 +26,6 @@ class DistributionInfo:
 class EpochInfo:
     epoch: int
     time: float
-    total_steps: int
     returns: DistributionInfo
     episode_len: DistributionInfo
     distance: DistributionInfo
