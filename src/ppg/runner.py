@@ -4,8 +4,6 @@ from src.env_loader import load_ppg_env
 from src.ppg.agent import Agent
 
 import numpy as np
-import os
-import logging
 import ray
 
 @ray.remote
@@ -25,9 +23,17 @@ class Runner:
         self.max_action = 1.0
 
         self.save_path = save_path
-        logging.basicConfig(filename=os.path.join(save_path, "train.log"), filemode='w', level=logging.INFO)
 
-    def run_episode(self, i_episode, total_reward, eps_time):
+    def run_episode(
+            self, 
+            i_episode, 
+            total_reward,
+            eps_time,
+            reward_partials,
+            epoch_ep_distances,
+            epoch_ep_returns,
+            epoch_ep_lens
+            ):
 
         self.agent.load_weights(self.save_path)
 
@@ -35,7 +41,7 @@ class Runner:
             action, action_mean = self.agent.act(self.states)
 
             action_gym = np.clip(action, -1.0, 1.0) * self.max_action
-            next_state, reward, done, _ = self.env.step(action_gym)
+            next_state, reward, done, info = self.env.step(action_gym)
 
             eps_time += 1
             total_reward += reward
@@ -56,16 +62,23 @@ class Runner:
                 self.states = self.env.reset()
                 i_episode += 1
 
-                self.log(
-                    "Episode {} \t t_reward: {} \t time: {} \t process no: {} \t".format(
-                        i_episode, total_reward, eps_time, self.tag
-                    )
-                )
+                epoch_ep_returns.append(total_reward)
+                epoch_ep_lens.append(eps_time)
+                epoch_ep_distances.append(info["dist_from_origin"])
+
+                for key in info:
+                    if key.startswith("reward"):
+                        if key not in reward_partials:
+                            reward_partials[key] = []
+                        reward_partials[key].append(info[key])
+
+                # print(
+                #     "Episode {} \t t_reward: {} \t time: {} \t process no: {}".format(
+                #         i_episode, total_reward, eps_time, self.tag
+                #     )
+                # )
 
                 total_reward = 0
                 eps_time = 0
 
         return self.agent.get_all(), i_episode, total_reward, eps_time, self.tag
-    
-    def log(self, msg):
-        logging.info(msg)
