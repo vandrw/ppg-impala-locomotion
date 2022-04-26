@@ -1,10 +1,10 @@
 #!/bin/bash
 #SBATCH --job-name=myleg_ppg
-#SBATCH --time=04:00:00
-#SBATCH --nodes=1
+#SBATCH --time=192:00:00
+#SBATCH --nodes=2
 #SBATCH --mail-type=ALL
 #SBATCH --mail-user=
-#SBATCH --partition=gpu
+#SBATCH --partition=regular
 #SBATCH --gres=gpu:1
 
 module purge
@@ -15,6 +15,6 @@ export LD_LIBRARY_PATH=/data/$USER/.libs/opensim_dependencies/ipopt/lib:/data/$U
 
 cd rug-locomotion-ppg
 
-python -m src.ppg_impala -c configs/default.yml --run-name test_healthy_ppg
+python -m src.train_ppg_impala -c configs/default.yml --run-name test_healthy_ppg
 
 conda deactivate

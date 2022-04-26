@@ -4,15 +4,15 @@ train_mode: True        # If you want to train the agent, set this to True. If f
 visualize: False        # If you want to display the image, set this to True. Turn this off if you run this on Peregrine/Google Collab.
 log_wandb: True         # Enables logging in wandb.
 
-n_update: 1024          # How many episodes before you update the Policy. Recommended to set it to 1024 for Continuous action spaces.
-n_aux_update: 5
-n_episode: 1000000      # How many episodes you want to run.
+n_update: 32000         # How many episodes before the Policy is updated. Also regarded as the simulation budget (steps) per iteration.
+n_aux_update: 5         # How many episodes before the Auxiliary is updated.
+n_episode: 10000        # How many episodes you want to run.
 n_agent: 20             # How many agents you want to run asynchronously.
 
 policy_kl_range: 0.03   # Recommended to set it to 0.03 for Continuous action spaces.
 policy_params: 5        # Recommended set to 5 for Continuous
 value_clip: 1.0         # How many value will be clipped. Recommended set to the highest or lowest possible reward
-entropy_coef: 0.0       # How much action randomness you will get. Because we use Standard Deviation for Continuous, no need to use Entropy for randomness.
+entropy_coef: 0.0       # How much action randomness is introduced. Because we use Standard Deviation for Continuous, no need to use Entropy for randomness.
 vf_loss_coef: 1.0       # Just set to 1.
 batch_size: 32          # How many batches per update. size of batch = n_update / batch_size. Recommended to set it to 32 for Continuous.
 PPO_epochs: 10          # How many epochs per update. Recommended to set it to 10 for Continuous.    
