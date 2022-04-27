@@ -14,4 +14,4 @@ export LD_LIBRARY_PATH=/data/$USER/.libs/opensim_dependencies/ipopt/lib:/data/$U
 
 python -m src.train_ppg_impala -c configs/healthy.yml --run-name test_healthy_ppg
 
-conda deactivate
+deactivate

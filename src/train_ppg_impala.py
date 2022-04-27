@@ -37,14 +37,10 @@ def main(args):
     stream_handler.setLevel(logging.INFO)
     logging.basicConfig(
         level=logging.INFO,
-        format="[%(levelname)s] %(message)s",
-        handlers=[
-            logging.FileHandler(os.path.join(output_path, "train.log"), mode="w"),
-            stream_handler,
-        ],
+        format="[%(levelname)s] %(message)s"
     )
 
-    logging.info("Saving configuration in {}/{}.".format(output_path, "train.log"))
+    logging.info("Saving configuration in {}/{}.".format(output_path, "config.yaml"))
     with open(os.path.join(output_path, "config.yaml"), "w") as f:
         f.write(yaml.safe_dump(args.__dict__, default_flow_style=False))
 
