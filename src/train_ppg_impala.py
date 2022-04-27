@@ -143,7 +143,7 @@ def main(args):
 
             if epoch % args.num_workers == 0:
                 info = EpochInfo(
-                    epoch,
+                    epoch / args.num_workers,
                     time.time() - start,
                     ep_info
                 )
