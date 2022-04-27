@@ -24,18 +24,11 @@ class Runner:
 
         self.save_path = save_path
 
-    def run_episode(
-            self, 
-            i_episode, 
-            total_reward,
-            eps_time,
-            reward_partials,
-            epoch_ep_distances,
-            epoch_ep_returns,
-            epoch_ep_lens
-            ):
+    def run_episode(self, i_episode, total_reward, eps_time):
 
         self.agent.load_weights(self.save_path)
+        # reward_partials = {}
+        # ep_distances = []
 
         for _ in range(self.n_update):
             action, action_mean = self.agent.act(self.states)
@@ -62,16 +55,17 @@ class Runner:
                 self.states = self.env.reset()
                 i_episode += 1
 
-                epoch_ep_returns.append(total_reward)
-                epoch_ep_lens.append(eps_time)
-                epoch_ep_distances.append(info["dist_from_origin"])
+                # epoch_ep_returns.append(total_reward)
+                # epoch_ep_lens.append(eps_time)
+                # epoch_ep_distances.append(info["dist_from_origin"])
 
-                for key in info:
-                    if key.startswith("reward"):
-                        if key not in reward_partials:
-                            reward_partials[key] = []
-                        reward_partials[key].append(info[key])
+                # for key in info:
+                #     if key.startswith("reward"):
+                #         if key not in reward_partials:
+                #             reward_partials[key] = []
+                #         reward_partials[key].append(info[key])
 
+                # ep_distances.append(info["dist_from_origin"])
                 # print(
                 #     "Episode {} \t t_reward: {} \t time: {} \t process no: {}".format(
                 #         i_episode, total_reward, eps_time, self.tag
@@ -80,5 +74,7 @@ class Runner:
 
                 total_reward = 0
                 eps_time = 0
+                # reward_partials = {}
+                # ep_distances = []
 
         return self.agent.get_all(), i_episode, total_reward, eps_time, self.tag

@@ -113,14 +113,10 @@ def main(args):
 
         episode_ids = []
         for i, runner in enumerate(runners):
-            episode_ids.append(runner.run_episode.remote(i, 0, 0, {}, [], [], []))
+            episode_ids.append(runner.run_episode.remote(i, 0, 0))
             time.sleep(3)
 
-        for epoch in range(1, args.n_episode + 1):
-            reward_partials = {}
-            epoch_ep_distances = []
-            ep_returns = []
-            ep_lens = []
+        for _ in range(1, args.n_episode + 1):
 
             ready, not_ready = ray.wait(episode_ids)
             trajectory, i_episode, total_reward, eps_time, tag = ray.get(ready)[0]
@@ -130,11 +126,7 @@ def main(args):
                 runners[tag].run_episode.remote(
                     i_episode,
                     total_reward,
-                    eps_time,
-                    reward_partials,
-                    epoch_ep_distances,
-                    ep_returns,
-                    ep_lens,
+                    eps_time
                 )
             )
 
@@ -149,25 +141,25 @@ def main(args):
             learner.save_weights(output_path)
 
             # Logging Epoch results
-            info_returns = DistributionInfo.from_array(ep_returns)
-            info_lens = DistributionInfo.from_array(ep_lens)
-            info_dist = DistributionInfo.from_array(epoch_ep_distances)
-            info_reward_partials = {
-                key: DistributionInfo.from_array(reward_partials[key])
-                for key in reward_partials
-            }
-            info = EpochInfo(
-                epoch,
-                time() - start,
-                info_returns,
-                info_lens,
-                info_dist,
-                info_reward_partials,
-            )
-            if args.log_wandb:
-                wandb.log(asdict(info))
+            # info_returns = DistributionInfo.from_array(ep_returns)
+            # info_lens = DistributionInfo.from_array(ep_lens)
+            # info_dist = DistributionInfo.from_array(epoch_ep_distances)
+            # info_reward_partials = {
+            #     key: DistributionInfo.from_array(reward_partials[key])
+            #     for key in reward_partials
+            # }
+            # info = EpochInfo(
+            #     epoch,
+            #     time() - start,
+            #     info_returns,
+            #     info_lens,
+            #     info_dist,
+            #     info_reward_partials,
+            # )
+            # if args.log_wandb:
+            #     wandb.log(asdict(info))
             
-            logging.info("Epoch information: {}".format(pformat(asdict(info))))
+            # logging.info("Epoch information: {}".format(pformat(asdict(info))))
 
     except KeyboardInterrupt:
         logging.warning("Training has been stopped.")
