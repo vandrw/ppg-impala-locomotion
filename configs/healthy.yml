@@ -6,7 +6,7 @@ log_wandb: True         # Enables logging in wandb.
 
 n_update: 64000         # How many episodes before the Policy is updated. Also regarded as the simulation budget (steps) per iteration.
 n_aux_update: 5         # How many episodes before the Auxiliary is updated.
-num_workers: 30             # How many agents you want to run asynchronously.
+num_workers: 20         # How many agents you want to run asynchronously.
 
 policy_kl_range: 0.03   # Recommended to set it to 0.03 for Continuous action spaces.
 policy_params: 5        # Recommended set to 5 for Continuous

@@ -141,9 +141,9 @@ def main(args):
             learner.save_weights(output_path)
 
 
-            if epoch % args.num_workers == 0:
+            if epoch % 5 == 0:
                 info = EpochInfo(
-                    epoch / args.num_workers,
+                    epoch,
                     time.time() - start,
                     ep_info
                 )
