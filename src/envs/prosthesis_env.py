@@ -9,7 +9,7 @@ from opensim import (
 )
 import numpy as np
 
-from src.stable_pd import QTripplet, StablePD
+from src.envs.stable_pd import QTripplet, StablePD
 from src.data import DataRow, TrainingData
 
 from .base_env import BaseOpenSimEnv

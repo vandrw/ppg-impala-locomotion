@@ -2,13 +2,17 @@ import gym
 from src.env_loader import load_ppg_env
 
 from src.ppg.agent import Agent
+from src.ppg.logging import DoneInfo
 
 import numpy as np
 import ray
 
+
 @ray.remote
 class Runner:
-    def __init__(self, experiment_type, training_mode, render, n_update, tag, save_path):
+    def __init__(
+        self, experiment_type, training_mode, render, n_update, tag, save_path
+    ):
         env_name = load_ppg_env(experiment_type, visualize=render)
         self.env = gym.make(env_name)
         self.states = self.env.reset()
@@ -24,11 +28,10 @@ class Runner:
 
         self.save_path = save_path
 
-    def run_episode(self, i_episode, total_reward, eps_time):
+    def run_episode(self, i_episode, total_reward, total_reward_partials, eps_time):
 
+        ep_info = None
         self.agent.load_weights(self.save_path)
-        # reward_partials = {}
-        # ep_distances = []
 
         for _ in range(self.n_update):
             action, action_mean = self.agent.act(self.states)
@@ -38,6 +41,11 @@ class Runner:
 
             eps_time += 1
             total_reward += reward
+            for key in info:
+                if key.startswith("reward"):
+                    if key not in total_reward_partials:
+                        total_reward_partials[key] = 0
+                    total_reward_partials[key] += info[key]
 
             if self.training_mode:
                 self.agent.save_eps(
@@ -55,26 +63,29 @@ class Runner:
                 self.states = self.env.reset()
                 i_episode += 1
 
-                # epoch_ep_returns.append(total_reward)
-                # epoch_ep_lens.append(eps_time)
-                # epoch_ep_distances.append(info["dist_from_origin"])
-
-                # for key in info:
-                #     if key.startswith("reward"):
-                #         if key not in reward_partials:
-                #             reward_partials[key] = []
-                #         reward_partials[key].append(info[key])
-
-                # ep_distances.append(info["dist_from_origin"])
+                ep_info = DoneInfo(
+                    total_reward,
+                    eps_time,
+                    info["dist_from_origin"],
+                    total_reward_partials
+                )
                 # print(
-                #     "Episode {} \t t_reward: {} \t time: {} \t process no: {}".format(
-                #         i_episode, total_reward, eps_time, self.tag
+                #     "[Proc {}] Episode {}: {}".format(
+                #         self.tag, i_episode, ep_info
                 #     )
                 # )
 
                 total_reward = 0
                 eps_time = 0
-                # reward_partials = {}
-                # ep_distances = []
+                total_reward_partials = {}
 
-        return self.agent.get_all(), i_episode, total_reward, eps_time, self.tag
+        return (
+            self.agent.get_all(),
+            i_episode,
+            total_reward,
+            total_reward_partials,
+            eps_time,
+            ep_info,
+            self.tag,
+        )
+

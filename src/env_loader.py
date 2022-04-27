@@ -1,6 +1,4 @@
 from pathlib import Path
-import importlib
-
 import gym
 
 PROJECT_ROOT = Path(__file__).resolve().parent.parent

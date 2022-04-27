@@ -3,15 +3,15 @@ from src.env_loader import load_ppg_env
 
 from src.ppg.runner import Runner
 from src.ppg.model import Learner
-from src.ppg.logging import EpochInfo, DistributionInfo
 
+from itertools import count as infinite_range
+from src.ppg.logging import EpochInfo
 from dataclasses import asdict
 from pprint import pformat
 
 import time
 import datetime
 import os
-import sys
 
 import argparse
 import yaml
@@ -37,7 +37,7 @@ def main(args):
     stream_handler.setLevel(logging.INFO)
     logging.basicConfig(
         level=logging.INFO,
-        format="[%(asctime)s] %(levelname)s : %(message)s",
+        format="[%(levelname)s] %(message)s",
         handlers=[
             logging.FileHandler(os.path.join(output_path, "train.log"), mode="w"),
             stream_handler,
@@ -50,9 +50,13 @@ def main(args):
 
     continue_run = os.path.exists((os.path.join(output_path, "agent.pth")))
     if continue_run:
+        with open(str(os.path.join(output_path, "epoch.info")), "r") as ep_file:
+            start_epoch = int(ep_file.readline())
         logging.info(
-            "Found previous model in {}. Continuing training.".format(output_path)
+            "Found previous model in {}. Continuing training from epoch {}.".format(output_path, start_epoch)
         )
+    else:
+        start_epoch = 0
 
     if args.log_wandb:
         try:
@@ -61,7 +65,7 @@ def main(args):
                 config=args,
                 name=args.run_name,
                 id=args.run_name,
-                resume="must" if continue_run else "never",
+                resume=True
             )
         except ModuleNotFoundError:
             logging.error(
@@ -91,7 +95,6 @@ def main(args):
         args.learning_rate,
     )
 
-    t_aux_updates = 0
     start = time.time()
     ray.init()
 
@@ -105,7 +108,7 @@ def main(args):
                 i,
                 save_path=output_path,
             )
-            for i in range(args.n_agent)
+            for i in range(args.num_workers)
         ]
 
         if not continue_run:
@@ -113,20 +116,18 @@ def main(args):
 
         episode_ids = []
         for i, runner in enumerate(runners):
-            episode_ids.append(runner.run_episode.remote(i, 0, 0))
+            episode_ids.append(runner.run_episode.remote(i, 0, {}, 0))
             time.sleep(3)
 
-        for _ in range(1, args.n_episode + 1):
+        for epoch in infinite_range(start_epoch):
 
             ready, not_ready = ray.wait(episode_ids)
-            trajectory, i_episode, total_reward, eps_time, tag = ray.get(ready)[0]
+            trajectory, i_episode, total_reward, reward_partials, eps_time, ep_info, tag = ray.get(ready)[0]
 
             episode_ids = not_ready
             episode_ids.append(
                 runners[tag].run_episode.remote(
-                    i_episode,
-                    total_reward,
-                    eps_time
+                    i_episode, total_reward, reward_partials, eps_time
                 )
             )
 
@@ -134,37 +135,32 @@ def main(args):
             learner.save_all(states, actions, action_means, rewards, dones, next_states)
 
             learner.update_ppo()
-            if t_aux_updates == args.n_aux_update:
+            if epoch % args.n_aux_update == 0:
                 learner.update_aux()
-                t_aux_updates = 0
 
             learner.save_weights(output_path)
 
-            # Logging Epoch results
-            # info_returns = DistributionInfo.from_array(ep_returns)
-            # info_lens = DistributionInfo.from_array(ep_lens)
-            # info_dist = DistributionInfo.from_array(epoch_ep_distances)
-            # info_reward_partials = {
-            #     key: DistributionInfo.from_array(reward_partials[key])
-            #     for key in reward_partials
-            # }
-            # info = EpochInfo(
-            #     epoch,
-            #     time() - start,
-            #     info_returns,
-            #     info_lens,
-            #     info_dist,
-            #     info_reward_partials,
-            # )
-            # if args.log_wandb:
-            #     wandb.log(asdict(info))
-            
-            # logging.info("Epoch information: {}".format(pformat(asdict(info))))
+
+            if epoch % args.num_workers == 0:
+                info = EpochInfo(
+                    epoch,
+                    time.time() - start,
+                    ep_info
+                )
+                if args.log_wandb:
+                    wandb.log(asdict(info))
+
+                logging.info("Epoch information: {}".format(pformat(asdict(info))))
+
+                ep_info = None
+                info = None
 
     except KeyboardInterrupt:
         logging.warning("Training has been stopped.")
     finally:
         ray.shutdown()
+        with open(str(os.path.join(output_path, "epoch.info")), "w") as ep_file:
+            ep_file.write(str(epoch))
 
         finish = time.time()
         timedelta = finish - start
@@ -238,13 +234,7 @@ if __name__ == "__main__":
         help="How many episodes before the Auxiliary is updated.",
     )
     parser.add_argument(
-        "--n-episode",
-        type=int,
-        default=1000000,
-        help="How many episodes you want to run.",
-    )
-    parser.add_argument(
-        "--n-agent",
+        "--num-workers",
         type=int,
         default=4,
         help="How many agents you want to run asynchronously.",

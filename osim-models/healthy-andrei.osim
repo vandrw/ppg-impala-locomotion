@@ -3348,15 +3348,15 @@
 			<groups />
 		</ContactGeometrySet>
 		<!--Controllers in the model.-->
-		<ControllerSet name="Controllers">
+		<controllerset name="Controllers">
 			<objects />
 			<groups />
-		</ControllerSet>
+		</controllerset>
 		<!--Additional components in the model.-->
-		<ComponentSet name="MiscComponents">
+		<componentset name="MiscComponents">
 			<objects />
 			<groups />
-		</ComponentSet>
+		</componentset>
 		<!--Probes in the model.-->
 		<ProbeSet>
 			<objects />
