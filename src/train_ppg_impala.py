@@ -144,7 +144,7 @@ def main(args):
                     ep_info
                 )
                 if args.log_wandb:
-                    wandb.log(asdict(info))
+                    wandb.log(asdict(info), step=epoch)
 
                 logging.info("Epoch information: {}".format(pformat(asdict(info))))
 
