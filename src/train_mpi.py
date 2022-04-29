@@ -1,11 +1,7 @@
-# ORIGINAL CODE PROVIDED BY wisnunugroho21 AT
-# https://github.com/wisnunugroho21/reinforcement_learning_phasic_policy_gradient
-# Software is distributed under a GPL-3.0 License.
-
 import gym
 from src.env_loader import load_ppg_env
 
-from src.ppg.runner import Runner
+from src.ppg.runner_mpi import Runner
 from src.ppg.model import Learner
 
 from itertools import count as infinite_range
@@ -21,8 +17,11 @@ import argparse
 import yaml
 import logging
 
-import ray
 import wandb
+from mpi4py import MPI
+
+comm = MPI.COMM_WORLD
+rank = comm.Get_rank()
 
 
 def init_output(run_name):
@@ -35,136 +34,151 @@ def init_output(run_name):
 
 
 def main(args):
-    output_path = init_output(args.run_name)
+    if rank == 0:
+        output_path = init_output(args.run_name)
 
-    stream_handler = logging.StreamHandler()
-    stream_handler.setLevel(logging.INFO)
-    logging.basicConfig(
-        level=logging.INFO,
-        format="[%(levelname)s] %(message)s"
-    )
+        stream_handler = logging.StreamHandler()
+        stream_handler.setLevel(logging.INFO)
+        logging.basicConfig(level=logging.INFO, format="[%(levelname)s] %(message)s")
 
-    logging.info("Saving configuration in {}/{}.".format(output_path, "config.yaml"))
-    with open(os.path.join(output_path, "config.yaml"), "w") as f:
-        f.write(yaml.safe_dump(args.__dict__, default_flow_style=False))
-
-    continue_run = os.path.exists((os.path.join(output_path, "agent.pth")))
-    if continue_run:
-        with open(str(os.path.join(output_path, "epoch.info")), "r") as ep_file:
-            start_epoch = int(ep_file.readline())
         logging.info(
-            "Found previous model in {}. Continuing training from epoch {}.".format(output_path, start_epoch)
+            "Saving configuration in {}/{}.".format(output_path, "config.yaml")
         )
+        with open(os.path.join(output_path, "config.yaml"), "w") as f:
+            f.write(yaml.safe_dump(args.__dict__, default_flow_style=False))
+
+        continue_run = os.path.exists((os.path.join(output_path, "agent.pth")))
+        if continue_run:
+            with open(str(os.path.join(output_path, "epoch.info")), "r") as ep_file:
+                start_epoch = int(ep_file.readline())
+            logging.info(
+                "Found previous model in {}. Continuing training from epoch {}.".format(
+                    output_path, start_epoch
+                )
+            )
+        else:
+            start_epoch = 0
+
+        if args.log_wandb:
+            try:
+                wandb.init(
+                    project="rug-locomotion-ppg",
+                    config=args,
+                    name=args.run_name,
+                    id=args.run_name,
+                    resume=True,
+                )
+            except ModuleNotFoundError:
+                logging.error(
+                    "You've requested to log metrics to wandb but package was not found. "
+                    "Metrics not being logged to wandb, try `pip install wandb`"
+                )
+
+        env_name = load_ppg_env(args.env, visualize=args.visualize)
+
+        env = gym.make(env_name)
+        state_dim = env.observation_space.shape[0]
+        action_dim = env.action_space.shape[0]
+
+        learner = Learner(
+            state_dim,
+            action_dim,
+            args.train_mode,
+            args.policy_kl_range,
+            args.policy_params,
+            args.value_clip,
+            args.entropy_coef,
+            args.vf_loss_coef,
+            args.batch_size,
+            args.PPO_epochs,
+            args.gamma,
+            args.lam,
+            args.learning_rate,
+        )
+
+        start = time.time()
+        if not continue_run:
+            learner.save_weights(output_path)
+
+        msg = (output_path, start_epoch)
     else:
-        start_epoch = 0
-
-    if args.log_wandb:
-        try:
-            wandb.init(
-                project="rug-locomotion-ppg",
-                config=args,
-                name=args.run_name,
-                id=args.run_name,
-                resume=True
-            )
-        except ModuleNotFoundError:
-            logging.error(
-                "You've requested to log metrics to wandb but package was not found. "
-                "Metrics not being logged to wandb, try `pip install wandb`"
-            )
-
-    env_name = load_ppg_env(args.env, visualize=args.visualize)
-
-    env = gym.make(env_name)
-    state_dim = env.observation_space.shape[0]
-    action_dim = env.action_space.shape[0]
-
-    learner = Learner(
-        state_dim,
-        action_dim,
-        args.train_mode,
-        args.policy_kl_range,
-        args.policy_params,
-        args.value_clip,
-        args.entropy_coef,
-        args.vf_loss_coef,
-        args.batch_size,
-        args.PPO_epochs,
-        args.gamma,
-        args.lam,
-        args.learning_rate,
-    )
-
-    start = time.time()
-    ray.init()
+        msg = None
+    
+    output_path, start_epoch = comm.bcast(msg, root=0)
 
     try:
-        runners = [
-            Runner.remote(
+        if rank > 0:
+            runner = Runner(
                 args.env,
                 args.train_mode,
                 args.visualize,
                 args.n_update,
-                i,
+                rank,
                 save_path=output_path,
             )
-            for i in range(args.num_workers)
-        ]
 
-        if not continue_run:
-            learner.save_weights(output_path)
-
-        episode_ids = []
-        for i, runner in enumerate(runners):
-            episode_ids.append(runner.run_episode.remote(i, 0, {}, 0))
+            data = runner.run_episode(rank, 0, {}, 0)
+            comm.send(data, dest=0)
             time.sleep(3)
 
         for epoch in infinite_range(start_epoch):
+            data = None
 
-            ready, not_ready = ray.wait(episode_ids)
-            trajectory, i_episode, total_reward, reward_partials, eps_time, ep_info, tag = ray.get(ready)[0]
+            if rank > 0:
+                i_episode, total_reward, reward_partials, eps_time = comm.recv(
+                    source=0, tag=11
+                )
 
-            episode_ids = not_ready
-            episode_ids.append(
-                runners[tag].run_episode.remote(
+
+                data = runner.run_episode(
                     i_episode, total_reward, reward_partials, eps_time
                 )
-            )
 
-            states, actions, action_means, rewards, dones, next_states = trajectory
-            learner.save_all(states, actions, action_means, rewards, dones, next_states)
+                comm.send(data, dest=0)
 
-            learner.update_ppo()
-            if epoch % args.n_aux_update == 0:
-                learner.update_aux()
+            if rank == 0:
+                data = comm.recv()
+                trajectory, i_episode, total_reward, reward_partials, eps_time, ep_info, proc_num = data
+                comm.send(
+                    (i_episode, total_reward, reward_partials, eps_time),
+                    dest=proc_num,
+                    tag=11,
 
-            learner.save_weights(output_path)
-
-
-            if epoch % 5 == 0:
-                info = EpochInfo(
-                    epoch,
-                    time.time() - start,
-                    ep_info
                 )
-                if args.log_wandb:
-                    wandb.log(asdict(info), step=epoch)
 
-                logging.info("Epoch information: {}".format(pformat(asdict(info))))
+                states, actions, action_means, rewards, dones, next_states = trajectory
+                learner.save_all(
+                    states, actions, action_means, rewards, dones, next_states
+                )
 
-                ep_info = None
-                info = None
+                learner.update_ppo()
+                if epoch % args.n_aux_update == 0:
+                    learner.update_aux()
+
+                learner.save_weights(output_path)
+
+                if epoch % 5 == 0:
+                    info = EpochInfo(epoch, time.time() - start, ep_info)
+                    if args.log_wandb:
+                        wandb.log(asdict(info))
+
+                    logging.info("Epoch information: {}".format(pformat(asdict(info))))
+
+                    ep_info = None
+                    info = None
 
     except KeyboardInterrupt:
-        logging.warning("Training has been stopped.")
+        if rank == 0:
+            logging.warning("Training has been stopped.")
     finally:
-        ray.shutdown()
-        with open(str(os.path.join(output_path, "epoch.info")), "w") as ep_file:
-            ep_file.write(str(epoch))
+        if rank == 0:
+            MPI.Finalize()
+            with open(str(os.path.join(output_path, "epoch.info")), "w") as ep_file:
+                ep_file.write(str(epoch))
 
-        finish = time.time()
-        timedelta = finish - start
-        logging.info("Time: {}".format(str(datetime.timedelta(seconds=timedelta))))
+            finish = time.time()
+            timedelta = finish - start
+            logging.info("Time: {}".format(str(datetime.timedelta(seconds=timedelta))))
 
 
 def _parse_args(parser, config_parser):

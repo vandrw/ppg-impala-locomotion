@@ -4,7 +4,7 @@ train_mode: True        # If you want to train the agent, set this to True. If f
 visualize: False        # If you want to display the image, set this to True. Turn this off if you run this on Peregrine/Google Collab.
 log_wandb: False         # Enables logging in wandb.
 
-n_update: 300           # How many episodes before the Policy is updated (per worker). Also regarded as the simulation budget (steps) per iteration.
+n_update: 500           # How many episodes before the Policy is updated (per worker). Also regarded as the simulation budget (steps) per iteration.
 n_aux_update: 5         # How many episodes before the Auxiliary is updated.
 num_workers: 5          # How many agents you want to run asynchronously.
 
