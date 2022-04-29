@@ -1,8 +1,8 @@
 #!/bin/bash
 #SBATCH --job-name=myleg_ppg
 #SBATCH --time=192:00:00
-#SBATCH --cpus-per-task=32
-#SBATCH --mem-per-cpu=8GB
+#SBATCH --nodes=1
+#SBATCH --mem=32GB
 #SBATCH --mail-type=ALL
 #SBATCH --mail-user=
 #SBATCH --partition=regular
