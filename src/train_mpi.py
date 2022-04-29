@@ -49,13 +49,14 @@ def main(args):
 
         continue_run = os.path.exists((os.path.join(output_path, "agent.pth")))
         if continue_run:
-            with open(str(os.path.join(output_path, "epoch.info")), "r") as ep_file:
-                start_epoch = int(ep_file.readline())
-            logging.info(
-                "Found previous model in {}. Continuing training from epoch {}.".format(
-                    output_path, start_epoch
+            try:
+                with open(str(os.path.join(output_path, "epoch.info")), "r") as ep_file:
+                    start_epoch = int(ep_file.readline())
+                logging.info(
+                    "Found previous model in {}. Continuing training from epoch {}.".format(output_path, start_epoch)
                 )
-            )
+            except FileNotFoundError:
+                start_epoch = 0
         else:
             start_epoch = 0
 
