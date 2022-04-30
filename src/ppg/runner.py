@@ -27,6 +27,7 @@ class Runner:
         self.max_action = 1.0
 
         self.save_path = save_path
+        print("[Proc {}] Worker initialized.".format(tag))
 
     def run_episode(self, i_episode, total_reward, total_reward_partials, eps_time):
 
