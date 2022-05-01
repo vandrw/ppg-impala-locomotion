@@ -1,6 +1,7 @@
 #!/bin/bash
 #SBATCH --job-name=myleg_ppg_mpi
 #SBATCH --time=24:00:00
+#SBATCH --output=healthy_mpi_%j.out
 #SBATCH --nodes=3
 #SBATCH --ntasks-per-node=24
 #SBATCH --mem=32GB
