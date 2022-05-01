@@ -1,3 +1,7 @@
+from mpi4py import MPI
+comm = MPI.COMM_WORLD
+rank = comm.Get_rank()
+
 import gym
 from src.env_loader import load_ppg_env
 
@@ -18,10 +22,6 @@ import yaml
 import logging
 
 import wandb
-from mpi4py import MPI
-
-comm = MPI.COMM_WORLD
-rank = comm.Get_rank()
 
 
 def init_output(run_name):
