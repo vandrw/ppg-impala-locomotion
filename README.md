@@ -10,7 +10,7 @@ sudo apt install libxi-dev libxmu-dev liblapack-dev libadolc2 coinor-libipopt1v5
 
 Install OpenSim using conda:
 ```
-conda create -n opensim -c vbotics opensim=4.2 python=3.7 numpy
+conda create -n opensim -c vbotics opensim=4.3 python=3.7 numpy
 conda activate opensim
 git clone https://github.com/vbotics/rug-opensim-rl.git
 cd rug-opensim-rl
@@ -19,15 +19,22 @@ pip install -e .
 ```
 
 For non-Ubuntu distributions, you will have to find a way to build OpenSim-core. See [this](https://github.com/opensim-org/opensim-core) or below for more information.
-```
-export LD_LIBRARY_PATH=$CONDA_PREFIX/lib:$CONDA_PREFIX/adol-c/lib64/:$CONDA_PREFIX/ipopt/lib/:$LD_LIBRARY_PATH
-```
 
+After activating the virtual environment, install additional dependencies:
 ```
 pip install python-dateutil pytz ray==1.12.0
+
+git clone https://github.com/rug-my-leg/opensim-env.git
+cd opensim-env/
+pip install -e .
 ```
 
 ## Running
+
+Before running, update your LD_LIBRARY_PATH. This needs to be done only when you open a new terminal:
+```
+export LD_LIBRARY_PATH=$CONDA_PREFIX/lib:$CONDA_PREFIX/adol-c/lib64/:$CONDA_PREFIX/ipopt/lib/:$LD_LIBRARY_PATH
+```
 
 To run a training process, run the following:
 ```
