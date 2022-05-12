@@ -2,6 +2,7 @@ from dataclasses import dataclass
 from typing import Dict
 
 from pathlib import Path
+import sys
 
 import yaml
 import logging
@@ -31,7 +32,7 @@ def init_logging(config):
 
     output_path = init_output(config.run_name)
 
-    logging.basicConfig(level=logging.INFO, format="[%(levelname)s] %(message)s")
+    logging.basicConfig(level=logging.INFO, format="[%(levelname)s] %(message)s", stream=sys.stdout)
 
     logging.info(
         "Saving configuration in {}/{}.".format(output_path, "config.yaml")
