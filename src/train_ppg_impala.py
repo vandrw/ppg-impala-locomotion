@@ -3,7 +3,7 @@
 # Software is distributed under a GPL-3.0 License.
 
 import gym
-from src.env_loader import load_ppg_env
+from src.env_loader2 import make_gym_env
 
 from src.ppg.runner import Runner
 from src.ppg.model import Learner
@@ -39,12 +39,11 @@ def main(args):
 
     stream_handler = logging.StreamHandler()
     stream_handler.setLevel(logging.INFO)
-    logging.basicConfig(
-        level=logging.INFO,
-        format="[%(levelname)s] %(message)s"
-    )
+    logging.basicConfig(level=logging.INFO, format="[%(levelname)s] %(message)s")
 
-    logging.info("Saving configuration in {}/{}.".format(output_path, "config.yaml"))
+    logging.info(
+        "Saving configuration in {}/{}.".format(output_path, "config.yaml")
+    )
     with open(os.path.join(output_path, "config.yaml"), "w") as f:
         f.write(yaml.safe_dump(args.__dict__, default_flow_style=False))
 
@@ -56,7 +55,7 @@ def main(args):
             logging.info(
                 "Found previous model in {}. Continuing training from epoch {}.".format(output_path, start_epoch)
             )
-        except FileNotFoundError:
+        except:
             start_epoch = 0
     else:
         start_epoch = 0
@@ -76,7 +75,7 @@ def main(args):
                 "Metrics not being logged to wandb, try `pip install wandb`"
             )
 
-    env_name = load_ppg_env(args.env, visualize=args.visualize)
+    env_name = make_gym_env(args.env, visualize=args.visualize)
 
     env = gym.make(env_name)
     state_dim = env.observation_space.shape[0]

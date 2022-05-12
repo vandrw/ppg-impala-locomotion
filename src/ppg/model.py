@@ -1,4 +1,4 @@
-import os
+from pathlib import Path
 import torch
 import torch.nn as nn
 import numpy as np
@@ -473,4 +473,4 @@ class Learner:
         self.policy_old.load_state_dict(self.policy.state_dict())
 
     def save_weights(self, path):
-        torch.save(self.policy.state_dict(), os.path.join(path, "agent.pth"))
+        torch.save(self.policy.state_dict(), Path(path) / "agent.pth")

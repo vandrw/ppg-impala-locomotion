@@ -1,367 +1,209 @@
 from mpi4py import MPI
 import gym
-from src.env_loader import load_ppg_env
-
-from src.ppg.logging import DoneInfo
-from src.ppg.model import Learner
-from src.ppg.agent import Agent
-
-import numpy as np
+from src.env_loader2 import make_gym_env
 
 from itertools import count as infinite_range
-from src.ppg.logging import EpochInfo
-from dataclasses import asdict
-from pprint import pformat
-
 import time
-import datetime
-import os
 
-import argparse
-import yaml
-import logging
-
-import wandb
+from src.args import get_args
 
 comm = MPI.COMM_WORLD
 rank = comm.Get_rank()
 
-class Runner:
-    def __init__(
-        self, experiment_type, training_mode, render, n_update, tag, save_path
-    ):
-        env_name = load_ppg_env(experiment_type, visualize=render)
-        self.env = gym.make(env_name)
-        self.states = self.env.reset()
-        self.state_dim = self.env.observation_space.shape[0]
-        self.action_dim = self.env.action_space.shape[0]
 
-        self.agent = Agent(self.state_dim, self.action_dim, training_mode)
+def main_worker(args):
+    from src.ppg.agent import Agent
+    import numpy as np
+    class Runner:
+        def __init__(
+            self, experiment_type, training_mode, render, n_update, tag, save_path
+        ):
+            env_name = make_gym_env(experiment_type, visualize=render)
+            self.env = gym.make(env_name)
+            self.states = self.env.reset()
+            self.state_dim = self.env.observation_space.shape[0]
+            self.action_dim = self.env.action_space.shape[0]
 
-        self.tag = tag
-        self.training_mode = training_mode
-        self.n_update = n_update
-        self.max_action = 1.0
+            self.agent = Agent(self.state_dim, self.action_dim, training_mode)
 
-        self.save_path = save_path
-        print("[Proc {}] Worker initialized.".format(tag))
+            self.tag = tag
+            self.training_mode = training_mode
+            self.n_update = n_update
+            self.max_action = 1.0
 
-    def run_episode(self, i_episode, total_reward, total_reward_partials, eps_time):
+            self.save_path = save_path
+            print("[Proc {}] Worker initialized.".format(tag))
 
-        ep_info = None
-        self.agent.load_weights(self.save_path)
+        def run_episode(self, i_episode, total_reward, eps_time):
 
-        for _ in range(self.n_update):
-            action, action_mean = self.agent.act(self.states)
+            self.agent.load_weights(self.save_path)
 
-            action_gym = np.clip(action, -1.0, 1.0) * self.max_action
-            next_state, reward, done, info = self.env.step(action_gym)
+            for _ in range(self.n_update):
+                action, action_mean = self.agent.act(self.states)
 
-            eps_time += 1
-            total_reward += reward
-            for key in info:
-                if key.startswith("reward"):
-                    if key not in total_reward_partials:
-                        total_reward_partials[key] = 0
-                    total_reward_partials[key] += info[key]
+                action_gym = np.clip(action, -1.0, 1.0) * self.max_action
+                next_state, reward, done, _ = self.env.step(action_gym)
 
-            if self.training_mode:
-                self.agent.save_eps(
-                    self.states.tolist(),
-                    action,
-                    action_mean,
-                    reward,
-                    float(done),
-                    next_state.tolist(),
-                )
+                eps_time += 1
+                total_reward += reward
 
-            self.states = next_state
+                if self.training_mode:
+                    self.agent.save_eps(
+                        self.states.tolist(),
+                        action,
+                        action_mean,
+                        reward,
+                        float(done),
+                        next_state.tolist(),
+                    )
 
-            if done:
-                self.states = self.env.reset()
-                i_episode += 1
+                self.states = next_state
 
-                ep_info = DoneInfo(
-                    total_reward,
-                    eps_time,
-                    info["dist_from_origin"],
-                    total_reward_partials
-                )
+                if done:
+                    self.states = self.env.reset()
+                    i_episode += 1
 
-                total_reward = 0
-                eps_time = 0
-                total_reward_partials = {}
+                    info = {
+                        "total_reward": total_reward, 
+                        "episode_time": eps_time
+                        }
 
-        return (
-            self.agent.get_all(),
-            i_episode,
-            total_reward,
-            total_reward_partials,
-            eps_time,
-            ep_info,
-            self.tag,
-        )
+                    total_reward = 0
+                    eps_time = 0
 
-def init_output(run_name):
-    output_path = os.path.join("output", run_name)
+            return (
+                self.agent.get_all(),
+                i_episode,
+                total_reward,
+                eps_time,
+                info,
+                # self.tag,
+            )
 
-    if not os.path.exists(output_path):
-        os.mkdir(output_path)
+    msg = None
 
-    return output_path
+    output_path, start_epoch = comm.bcast(msg, root=0)
+
+    runner = Runner(
+        args.env,
+        args.train_mode,
+        args.visualize,
+        args.n_update,
+        rank,
+        save_path=output_path,
+    )
+
+    trajectory, i_episode, total_reward, eps_time, done_info = runner.run_episode(rank, 0, 0)
+    data = (trajectory, done_info)
+    comm.send(data, dest=0)
+    time.sleep(3)
+
+    try:
+        for _ in infinite_range(start_epoch):
+            trajectory, i_episode, total_reward, eps_time, done_info = runner.run_episode(
+                i_episode, total_reward, eps_time
+            )
+
+            data = (trajectory, done_info)
+
+            comm.send(data, dest=0)
+    except KeyboardInterrupt:
+        pass
 
 
-def main(args):
-    if rank == 0:
-        output_path = init_output(args.run_name)
+def main_head(args):
+    from src.ppg.model import Learner
 
-        stream_handler = logging.StreamHandler()
-        stream_handler.setLevel(logging.INFO)
-        logging.basicConfig(level=logging.INFO, format="[%(levelname)s] %(message)s")
+    from src.ppg.logging import EpochInfo, init_logging
+    from dataclasses import asdict
+    from pprint import pformat
 
-        logging.info(
-            "Saving configuration in {}/{}.".format(output_path, "config.yaml")
-        )
-        with open(os.path.join(output_path, "config.yaml"), "w") as f:
-            f.write(yaml.safe_dump(args.__dict__, default_flow_style=False))
+    from pathlib import Path
+    import datetime
+    import logging
 
-        continue_run = os.path.exists((os.path.join(output_path, "agent.pth")))
-        if continue_run:
-            try:
-                with open(str(os.path.join(output_path, "epoch.info")), "r") as ep_file:
-                    start_epoch = int(ep_file.readline())
-                logging.info(
-                    "Found previous model in {}. Continuing training from epoch {}.".format(output_path, start_epoch)
-                )
-            except FileNotFoundError:
-                start_epoch = 0
-        else:
-            start_epoch = 0
+    import wandb
 
-        if args.log_wandb:
-            try:
-                wandb.init(
-                    project="rug-locomotion-ppg",
-                    config=args,
-                    name=args.run_name,
-                    id=args.run_name,
-                    resume=True,
-                )
-            except ModuleNotFoundError:
-                logging.error(
-                    "You've requested to log metrics to wandb but package was not found. "
-                    "Metrics not being logged to wandb, try `pip install wandb`"
-                )
+    wandb_run, continue_run, start_epoch, output_path = init_logging(args)
 
-        env_name = load_ppg_env(args.env, visualize=args.visualize)
+    env_name = make_gym_env(args.env, visualize=args.visualize)
 
-        env = gym.make(env_name)
-        state_dim = env.observation_space.shape[0]
-        action_dim = env.action_space.shape[0]
+    env = gym.make(env_name)
+    state_dim = env.observation_space.shape[0]
+    action_dim = env.action_space.shape[0]
 
-        learner = Learner(
-            state_dim,
-            action_dim,
-            args.train_mode,
-            args.policy_kl_range,
-            args.policy_params,
-            args.value_clip,
-            args.entropy_coef,
-            args.vf_loss_coef,
-            args.batch_size,
-            args.PPO_epochs,
-            args.gamma,
-            args.lam,
-            args.learning_rate,
-        )
+    learner = Learner(
+        state_dim,
+        action_dim,
+        args.train_mode,
+        args.policy_kl_range,
+        args.policy_params,
+        args.value_clip,
+        args.entropy_coef,
+        args.vf_loss_coef,
+        args.batch_size,
+        args.PPO_epochs,
+        args.gamma,
+        args.lam,
+        args.learning_rate,
+    )
 
-        start = time.time()
-        if not continue_run:
-            learner.save_weights(output_path)
+    start = time.time()
+    if not continue_run:
+        learner.save_weights(output_path)
 
-        msg = (output_path, start_epoch)
-    else:
-        msg = None
-    
+    msg = (output_path, start_epoch)
+
     output_path, start_epoch = comm.bcast(msg, root=0)
 
     try:
-        if rank > 0:
-            runner = Runner(
-                args.env,
-                args.train_mode,
-                args.visualize,
-                args.n_update,
-                rank,
-                save_path=output_path,
-            )
-
-            data = runner.run_episode(rank, 0, {}, 0)
-            comm.send(data, dest=0)
-            time.sleep(3)
-
         for epoch in infinite_range(start_epoch):
             data = None
 
-            if rank > 0:
-                i_episode, total_reward, reward_partials, eps_time = comm.recv(
-                    source=0, tag=11
-                )
+            data = comm.recv()
+            trajectory, done_info = data
 
+            states, actions, action_means, rewards, dones, next_states = trajectory
+            learner.save_all(
+                states, actions, action_means, rewards, dones, next_states
+            )
 
-                data = runner.run_episode(
-                    i_episode, total_reward, reward_partials, eps_time
-                )
+            learner.update_ppo()
+            if epoch % args.n_aux_update == 0:
+                learner.update_aux()
 
-                comm.send(data, dest=0)
+            learner.save_weights(output_path)
 
-            if rank == 0:
-                data = comm.recv()
-                trajectory, i_episode, total_reward, reward_partials, eps_time, ep_info, proc_num = data
-                comm.send(
-                    (i_episode, total_reward, reward_partials, eps_time),
-                    dest=proc_num,
-                    tag=11,
+            if epoch % 5 == 0:
+                info = EpochInfo(epoch, time.time() - start, done_info)
+                if args.log_wandb:
+                    wandb.log(asdict(info))
 
-                )
+                logging.info("Epoch information: {}".format(pformat(asdict(info))))
 
-                states, actions, action_means, rewards, dones, next_states = trajectory
-                learner.save_all(
-                    states, actions, action_means, rewards, dones, next_states
-                )
-
-                learner.update_ppo()
-                if epoch % args.n_aux_update == 0:
-                    learner.update_aux()
-
-                learner.save_weights(output_path)
-
-                if epoch % 5 == 0:
-                    info = EpochInfo(epoch, time.time() - start, ep_info)
-                    if args.log_wandb:
-                        wandb.log(asdict(info))
-
-                    logging.info("Epoch information: {}".format(pformat(asdict(info))))
-
-                    ep_info = None
-                    info = None
+                done_info = None
+                info = None
 
     except KeyboardInterrupt:
-        if rank == 0:
-            logging.warning("Training has been stopped.")
+        logging.warning("Training has been stopped.")
     finally:
-        if rank == 0:
-            MPI.Finalize()
-            with open(str(os.path.join(output_path, "epoch.info")), "w") as ep_file:
-                ep_file.write(str(epoch))
+        if wandb_run:
+            wandb_run.finish()
+    
+        with open(Path(output_path) / "epoch.info", "w") as ep_file:
+            ep_file.write(str(epoch))
 
-            finish = time.time()
-            timedelta = finish - start
-            logging.info("Time: {}".format(str(datetime.timedelta(seconds=timedelta))))
+        finish = time.time()
+        timedelta = finish - start
+        logging.info("Time: {}".format(str(datetime.timedelta(seconds=timedelta))))
 
-
-def _parse_args(parser, config_parser):
-    # Do we have a config file to parse?
-    args_config, remaining = config_parser.parse_known_args()
-    if args_config.config:
-        with open(args_config.config, "r") as f:
-            cfg = yaml.safe_load(f)
-            parser.set_defaults(**cfg)
-
-    # The main arg parser parses the rest of the args, the usual
-    # defaults will have been overridden if config file specified.
-    args = parser.parse_args(remaining)
-
-    return args
+        MPI.Finalize()
 
 
 if __name__ == "__main__":
-    # The first arg parser parses out only the --config argument, this argument is used to
-    # load a yaml file containing key-values that override the defaults for the main parser below
-    config_parser = parser = argparse.ArgumentParser(
-        description="Training Configuration", add_help=False
-    )
-    parser.add_argument(
-        "-c",
-        "--config",
-        type=str,
-        metavar="FILE",
-        default="",
-        help="Path to the YAML config file specifying the default parameters.",
-    )
-    parser = argparse.ArgumentParser(
-        description="PyTorch implementation of Phasic Policy Gradient for training Physics based Musculoskeletal Models."
-    )
-    parser.add_argument(
-        "--env",
-        help="The environment type used. Currently supports the healthy and prosthesis models.",
-    )
-    parser.add_argument(
-        "--run-name",
-        type=str,
-        help="Display name to use in wandb. Also used for the path to save the model. Provide a unique name.",
-    )
-    parser.add_argument(
-        "--log-wandb", action="store_true", help="Whether to save output on wandb."
-    )
-    parser.add_argument(
-        "--train-mode",
-        action="store_true",
-        help="Whether to save new checkpoints during learning. If used, there will be changes made to the model.",
-    )
-    parser.add_argument(
-        "--visualize",
-        action="store_true",
-        help="Display the environment. Disregard this argument if you run this on Peregrine/Google Collab.",
-    )
-    parser.add_argument(
-        "--n-update",
-        type=int,
-        default=1024,
-        help="How many episodes before the Policy is updated. Also regarded as the simulation budget (steps) per iteration.",
-    )
-    parser.add_argument(
-        "--n-aux-update",
-        type=int,
-        default=5,
-        help="How many episodes before the Auxiliary is updated.",
-    )
-    parser.add_argument(
-        "--num-workers",
-        type=int,
-        default=4,
-        help="How many agents you want to run asynchronously.",
-    )
-    parser.add_argument("--policy-kl-range", type=float, default=0.03, help="TODO.")
-    parser.add_argument("--policy-params", type=int, default=5, help="TODO.")
-    parser.add_argument("--value-clip", type=float, default=1.0, help="TODO.")
-    parser.add_argument(
-        "--entropy-coef",
-        type=float,
-        default=0.0,
-        help="How much action randomness is introduced.",
-    )
-    parser.add_argument("--vf-loss-coef", type=float, default=1.0, help="TODO.")
-    parser.add_argument(
-        "--batch-size",
-        type=int,
-        default=32,
-        help="How many batches per update. The number of batches is given by the number of updates divided by the batch size.",
-    )
-    parser.add_argument(
-        "--PPO-epochs", type=int, default=10, help="How many PPO epochs per update."
-    )
-    parser.add_argument("--gamma", type=float, default=0.99, help="TODO.")
-    parser.add_argument("--lam", type=float, default=0.95, help="TODO.")
-    parser.add_argument("--learning-rate", type=float, default=2.5e-4, help="TODO.")
-
-    args = _parse_args(parser, config_parser)
-
-    assert (
-        args.env is not None
-    ), "Provide an environment type: 'healthy', 'prosthesis', 'terrain' "
-    assert (
-        args.run_name is not None
-    ), "Provide an unique run name. If you wish to continue training, use the same name found in outputs/name_of_your_run."
-
-    main(args)
+    args = get_args()
+    
+    if rank == 0:
+        main_head(args)
+    else:
+        main_worker(args)

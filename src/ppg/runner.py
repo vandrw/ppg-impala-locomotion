@@ -1,5 +1,5 @@
 import gym
-from src.env_loader import load_ppg_env
+from src.env_loader2 import make_gym_env
 
 from src.ppg.agent import Agent
 from src.ppg.logging import DoneInfo
@@ -13,7 +13,7 @@ class Runner:
     def __init__(
         self, experiment_type, training_mode, render, n_update, tag, save_path
     ):
-        env_name = load_ppg_env(experiment_type, visualize=render)
+        env_name = make_gym_env(experiment_type, visualize=render)
         self.env = gym.make(env_name)
         self.states = self.env.reset()
         self.state_dim = self.env.observation_space.shape[0]

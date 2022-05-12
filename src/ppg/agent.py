@@ -1,5 +1,5 @@
 import torch
-import os
+from pathlib import Path
 
 from src.ppg.model import Policy_Model, PolicyMemory, Continous
 
@@ -42,4 +42,4 @@ class Agent:
         self.policy.load_state_dict(weights)
 
     def load_weights(self, path):
-        self.policy.load_state_dict(torch.load(os.path.join(path, "agent.pth"), map_location=self.device))
+        self.policy.load_state_dict(torch.load(Path(path) / "agent.pth", map_location=self.device))
