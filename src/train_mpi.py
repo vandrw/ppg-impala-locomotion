@@ -177,7 +177,7 @@ def main_head(args):
             if epoch % 5 == 0:
                 info = EpochInfo(epoch, time.time() - start, done_info)
                 if args.log_wandb:
-                    wandb.log(asdict(info))
+                    wandb.log(asdict(info), step=epoch)
 
                 logging.info("Epoch information: {}".format(pformat(asdict(info))))
 
