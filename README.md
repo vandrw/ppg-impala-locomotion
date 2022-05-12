@@ -38,10 +38,18 @@ Before running, update your LD_LIBRARY_PATH. This needs to be done only when you
 export LD_LIBRARY_PATH=$CONDA_PREFIX/lib:$CONDA_PREFIX/adol-c/lib64/:$CONDA_PREFIX/ipopt/lib/:$LD_LIBRARY_PATH
 ```
 
-To run a training process, run the following:
+To run a training process with Ray, run the following:
 ```
-python -m src.ppg_impala --env-name healthy
+python -m src.train_ppg_impala --env-name healthy --run-name healthy_run_1
 ```
+
+To use MPI, run the following:
+```
+# Change the number after '-n' to use more/less workers.
+mpirun -n 32 python -m src.train_mpi --env-name healthy --run-name healthy_mpi_1
+```
+
+If you encounter issues when running the MPI version, try changing `start_method="fork"` from `src/ppg/logging.py` to `start_method="thread"`.
 
 
 ## Building OpenSim from source on Peregrine

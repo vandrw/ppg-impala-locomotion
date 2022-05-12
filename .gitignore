@@ -7,3 +7,6 @@ output/*
 wandb
 
 opensim.log
+
+*.out
+*.pyc

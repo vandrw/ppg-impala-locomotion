@@ -63,7 +63,7 @@ def init_logging(config):
                 name=config.run_name,
                 id=config.run_name,
                 resume=True,
-                settings=wandb.Settings(start_method="thread"),
+                settings=wandb.Settings(start_method="fork"),
             )
         except ModuleNotFoundError:
             logging.error(
