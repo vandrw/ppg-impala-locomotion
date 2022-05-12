@@ -1,51 +1,57 @@
 from pathlib import Path
+
 import gym
 
-PROJECT_ROOT = Path(__file__).resolve().parent.parent
-DEFAULT_MODELS_DIR = PROJECT_ROOT / "osim-models"
-DEFAULT_DATA_DIR = PROJECT_ROOT / "data"
+from opensim_env.action.concrete import DumbExampleController
+from opensim_env.context import OpensimEnvConfig
+from opensim_env.data import TrainingData
+from opensim_env.env import OpensimEnv
+from opensim_env.interface.core import OpensimGymEnv
 
+def make_env(env_type, visualize):
+    data_path = Path("data") / "motion_AB23_5,568.csv"
+    data = TrainingData(data_path, start_time=5.565)
 
-def load_ppg_env(env, visualize=False):
-    if env == "healthy":
-        from src.envs.healthy_env import HealthyOpenSimEnv
+    if env_type == "healthy":
+        from opensim_env.models import HEALTHY_PATH
+        from opensim_env.observation.concrete import RobinHealthyObserver
+        from opensim_env.reward.concrete import RobinHealthyEvaluator
 
-        model_path = DEFAULT_MODELS_DIR / "healthy-andrei.osim"
-        data_path = DEFAULT_DATA_DIR / "AB06.csv"
+        config = OpensimEnvConfig(HEALTHY_PATH, visualize=visualize)
 
-        gym.envs.register(
-            id="HealthyOpenSimEnv-v1",
-            entry_point=HealthyOpenSimEnv,
-            max_episode_steps=100000,
-            kwargs={
-                "visualize": visualize,
-                "model_path": model_path,
-                "data_path": data_path,
-                "data_start_time": 7.0,
-                "data_tempo": 0.9,
-            },
+        return OpensimEnv(
+            config,
+            lambda c: RobinHealthyObserver(c, data),
+            DumbExampleController,
+            lambda c: RobinHealthyEvaluator(c, data, 0.01, 1.0),
         )
+    elif env_type == "healthy_terrain":
+        from opensim_env.observation.concrete import RobinHealthyObserver
+        from opensim_env.reward.concrete import RobinHealthyEvaluator
 
-        return "HealthyOpenSimEnv-v1"
-    elif env == "prosthesis":
-        from src.envs.prosthesis_env import ProsthesisOpenSimEnv
+        HEALTHY_TERRAIN_PATH = Path("osim-models") / "OS4_gait14dof22musc_terrain.osim"
 
-        model_path = DEFAULT_MODELS_DIR / "OS4_gait14dof15musc_2act_LTFP_VR.osim"
-        data_path = DEFAULT_DATA_DIR / "new.csv"
+        config = OpensimEnvConfig(HEALTHY_TERRAIN_PATH, visualize=visualize)
 
-        gym.envs.register(
-            id="ProsthesisOpenSimEnv-v1",
-            entry_point=ProsthesisOpenSimEnv,
-            max_episode_steps=100000,
-            kwargs={
-                "visualize": visualize,
-                "model_path": model_path,
-                "data_path": data_path,
-                "data_start_time": 7.0,
-                "data_tempo": 0.9,
-            },
+        return OpensimEnv(
+            config,
+            lambda c: RobinHealthyObserver(c, data),
+            DumbExampleController,
+            lambda c: RobinHealthyEvaluator(c, data, 0.01, 1.0),
         )
-
-        return "ProsthesisOpenSimEnv-v1"
+    
+    elif env_type == "prosthesis":
+        raise NotImplementedError()
+    
+    elif env_type == "prosthesis_terrain":
+        raise NotImplementedError()
+    
     else:
-        raise Exception("Invalid environment given: {}".format(env))
+        raise ValueError("The environment type specified does not exist.")
+
+
+def make_gym_env(env_type, visualize):
+    gym.register(
+        "OpenSimEnv-v1", entry_point=OpensimGymEnv, kwargs=dict(env=lambda: make_env(env_type, visualize))
+    )
+    return "OpenSimEnv-v1"

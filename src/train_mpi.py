@@ -1,6 +1,6 @@
 from mpi4py import MPI
 import gym
-from src.env_loader2 import make_gym_env
+from src.env_loader import make_gym_env
 
 from itertools import count as infinite_range
 import time

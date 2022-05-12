@@ -10,8 +10,8 @@ sudo apt install libxi-dev libxmu-dev liblapack-dev libadolc2 coinor-libipopt1v5
 
 Install OpenSim using conda:
 ```
-conda create -n opensim -c vbotics opensim=4.3 python=3.7 numpy
-conda activate opensim
+conda create -n osim -c vbotics opensim=4.3 python=3.7 numpy
+conda activate osim
 git clone https://github.com/vbotics/rug-opensim-rl.git
 cd rug-opensim-rl
 git checkout tags/v3.0
@@ -20,7 +20,9 @@ pip install -e .
 
 For non-Ubuntu distributions, you will have to find a way to build OpenSim-core. See [this](https://github.com/opensim-org/opensim-core) or below for more information.
 
-After activating the virtual environment, install additional dependencies:
+## Dependencies
+
+After activating the virtual environment, install additional dependencies. Run the following in a local library folder:
 ```
 pip install python-dateutil pytz ray==1.12.0
 

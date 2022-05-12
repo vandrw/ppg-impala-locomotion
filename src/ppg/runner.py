@@ -1,5 +1,5 @@
 import gym
-from src.env_loader2 import make_gym_env
+from src.env_loader import make_gym_env
 
 from src.ppg.agent import Agent
 from src.ppg.logging import DoneInfo

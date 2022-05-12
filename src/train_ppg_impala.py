@@ -3,7 +3,7 @@
 # Software is distributed under a GPL-3.0 License.
 
 import gym
-from src.env_loader2 import make_gym_env
+from src.env_loader import make_gym_env
 
 from src.ppg.runner import Runner
 from src.ppg.model import Learner
