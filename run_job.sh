@@ -13,6 +13,6 @@ module load PyTorch/1.10.0-fosscuda-2020b
 source /data/$USER/.envs/osim/bin/activate
 export LD_LIBRARY_PATH=/data/$USER/.libs/opensim_dependencies/ipopt/lib:/data/$USER/.libs/opensim_dependencies/adol-c/lib64:$LD_LIBRARY_PATH
 
-python -m src.train_ppg_impala -c configs/healthy.yml --run-name test_test
+python -m src.train_ppg_impala -c configs/healthy.yml --run_name test_test
 
 deactivate
