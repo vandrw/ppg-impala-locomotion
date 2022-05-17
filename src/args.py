@@ -100,8 +100,10 @@ def get_args():
     assert (
         args.env is not None
     ), "Provide an environment type: 'healthy', 'prosthesis', 'terrain' "
-    assert (
-        args.run_name is not None
-    ), "Provide an unique run name. If you wish to continue training, use the same name found in outputs/name_of_your_run."
+
+    if args.run_name is None:
+        import time
+        args.run_name = "{}_{}".format(args.env, time.strftime("%Y%m%d%H%M%S"))
+        print("No unique run name was provided. Automatically named this run '{}'.".format(args.run_name))
 
     return args

@@ -35,7 +35,13 @@ pip install -e .
 
 Before running, update your LD_LIBRARY_PATH. This needs to be done only when you open a new terminal:
 ```
+# For Conda environments
 export LD_LIBRARY_PATH=$CONDA_PREFIX/lib:$CONDA_PREFIX/adol-c/lib64/:$CONDA_PREFIX/ipopt/lib/:$LD_LIBRARY_PATH
+```
+
+```
+# For environments built from source. Make sure you replace /home/$USER with the correct path to the libraries.
+export LD_LIBRARY_PATH=/home/$USER/.libs/opensim_dependencies/ipopt/lib:/home/$USER/.libs/opensim_dependencies/adol-c/lib64:$LD_LIBRARY_PATH
 ```
 
 To run a training process with Ray, run the following:
@@ -45,12 +51,33 @@ python -m src.train_ppg_impala --env-name healthy --run-name healthy_run_1
 
 To use MPI, run the following:
 ```
-# Change the number after '-n' to use more/less workers.
-mpirun -n 32 python -m src.train_mpi --env-name healthy --run-name healthy_mpi_1
+# Add the argument '-n' to use a specific amount of workers. If running with SLURM, disregard this argument.
+mpirun python -m src.train_mpi --env-name healthy --run-name healthy_mpi_1
 ```
 
 If you encounter issues when running the MPI version, try changing `start_method="fork"` from `src/ppg/logging.py` to `start_method="thread"`.
 
+## Hyperparameter Search
+To find a good set of hyperparameters for the model, `src/sweep_mpi.py` makes use of the `wandb` sweep function. Currently this is only implemented for the MPI version.
+
+To begin a hyperparameter sweep, first initialize the configurations using the command below. This will create a number of new folders under `output/sweep` that contain a config file, as well as a `sweeps.info` file that contains the path of these configs. Before running it, make sure you create a sweep in your project on wandb and copy the given ID in the `SWEEP_ID` constant inside the `src/init_sweep.py` script. You can also adjust the number of generated configurations by changing the `SWEEP_RUNS` constant.
+```
+python -m src.init_sweep
+```
+
+Finally, to train all the models, one can use the script mentioned below. If you're running the project on Peregrine, simply submit `run_sweep.sh` to the job handler.
+```
+#!/bin/bash
+
+while read -r line; do
+    if ! [[ -f "$(dirname "$line")/agent.pth" ]]; then
+        echo $line
+        mpirun --mca opal_warn_on_missing_libcuda 0 python -m src.sweep_mpi -c $line < /dev/null
+    else
+        echo "Config $line was already used for a sweep. Continuing..."
+    fi
+done < output/sweep/sweeps.info
+```
 
 ## Building OpenSim from source on Peregrine
 ```

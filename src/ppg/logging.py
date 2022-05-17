@@ -55,6 +55,7 @@ def init_logging(config):
     else:
         start_epoch = 0
 
+    wandb_run = None
     if config.log_wandb:
         try:
             wandb_run = wandb.init(
@@ -70,6 +71,5 @@ def init_logging(config):
                 "You've requested to log metrics to wandb but package was not found. "
                 "Metrics not being logged to wandb, try `pip install wandb`"
             )
-            wandb_run = None
     
     return wandb_run, continue_run, start_epoch, output_path

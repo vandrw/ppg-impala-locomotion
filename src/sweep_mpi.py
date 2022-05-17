@@ -4,14 +4,14 @@ comm = MPI.COMM_WORLD
 rank = comm.Get_rank()
 
 import gym
-from src.env_loader import make_gym_env
 import time
 
+from src.env_loader import make_gym_env
 from src.args import get_args
 
 SWEEP_TIME = 250
 
-def main_worker(args):
+def main_worker(config):
     from src.ppg.agent import Agent
     import numpy as np
     class Runner:
@@ -84,10 +84,10 @@ def main_worker(args):
     output_path = comm.bcast(msg, root=0)
 
     runner = Runner(
-        args.env,
-        args.train_mode,
-        args.visualize,
-        args.n_update,
+        config.env,
+        config.train_mode,
+        config.visualize,
+        config.n_update,
         rank,
         save_path=output_path,
     )
@@ -110,23 +110,21 @@ def main_worker(args):
         pass
 
 
-def main_head(args):
+def main_head(config):
     from src.ppg.model import Learner
 
-    from src.ppg.logging import EpochInfo, init_output
+    from src.ppg.logging import EpochInfo
     from dataclasses import asdict
-    from pprint import pformat
-
     from pathlib import Path
     import datetime
-    import logging
 
     import wandb
 
-    wandb.init(project="rug-locomotion-ppg", settings=wandb.Settings(start_method="fork"))
-    output_path = init_output(args)
+    output_path = Path("output") / config.run_name
 
-    env_name = make_gym_env(args.env, visualize=args.visualize)
+    wandb.init(project="rug-locomotion-ppg", config=config, settings=wandb.Settings(start_method="fork"))
+
+    env_name = make_gym_env(config.env, visualize=config.visualize)
 
     env = gym.make(env_name)
     state_dim = env.observation_space.shape[0]
@@ -135,17 +133,17 @@ def main_head(args):
     learner = Learner(
         state_dim,
         action_dim,
-        args.train_mode,
-        args.policy_kl_range,
-        args.policy_params,
-        args.value_clip,
-        args.entropy_coef,
-        args.vf_loss_coef,
-        args.batch_size,
-        args.PPO_epochs,
-        args.gamma,
-        args.lam,
-        args.learning_rate,
+        config.train_mode,
+        config.policy_kl_range,
+        config.policy_params,
+        config.value_clip,
+        config.entropy_coef,
+        config.vf_loss_coef,
+        config.batch_size,
+        config.PPO_epochs,
+        config.gamma,
+        config.lam,
+        config.learning_rate,
     )
 
     start = time.time()
@@ -168,38 +166,33 @@ def main_head(args):
             )
 
             learner.update_ppo()
-            if epoch % args.n_aux_update == 0:
+            if epoch % config.n_aux_update == 0:
                 learner.update_aux()
 
             learner.save_weights(output_path)
 
             if epoch % 5 == 0:
                 info = EpochInfo(epoch, time.time() - start, done_info)
-                if args.log_wandb:
+                if config.log_wandb:
                     wandb.log(asdict(info), step=epoch)
-
-                logging.info("Epoch information: {}".format(pformat(asdict(info))))
 
                 done_info = None
                 info = None
 
     except KeyboardInterrupt:
-        logging.warning("Training has been stopped.")
+        pass
     finally:
-        with open(Path(output_path) / "epoch.info", "w") as ep_file:
-            ep_file.write(str(epoch))
-
         finish = time.time()
         timedelta = finish - start
-        logging.info("Time: {}".format(str(datetime.timedelta(seconds=timedelta))))
+        print("Time: {}".format(str(datetime.timedelta(seconds=timedelta))))
 
         MPI.Finalize()
 
-
 if __name__ == "__main__":
-    args = get_args()
-    
+    config = get_args()
+
     if rank == 0:
-        main_head(args)
+        main_head(config)
     else:
-        main_worker(args)
+        main_worker(config)
+        
