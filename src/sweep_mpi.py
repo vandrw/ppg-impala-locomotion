@@ -6,6 +6,7 @@ rank = comm.Get_rank()
 
 import gym
 import time
+from math import ceil
 
 from src.env_loader import make_gym_env
 from src.args import get_args
@@ -99,7 +100,7 @@ def main_worker(config):
     time.sleep(3)
 
     try:
-        for _ in range(SWEEP_TIME):
+        for _ in range(ceil(SWEEP_TIME / (w_size - 1))):
             trajectory, i_episode, total_reward, eps_time, done_info = runner.run_episode(
                 i_episode, total_reward, eps_time
             )
@@ -107,8 +108,8 @@ def main_worker(config):
             data = (trajectory, done_info)
 
             comm.send(data, dest=0)
-    except KeyboardInterrupt:
-        pass
+    except Exception as e:
+        print("Proc {} Terminated: {}".format(rank, e))
 
 
 def main_head(config):
@@ -123,7 +124,13 @@ def main_head(config):
 
     output_path = Path("output") / config.run_name
 
-    wandb_run = wandb.init(project="rug-locomotion-ppg", config=config, settings=wandb.Settings(start_method="fork"))
+    wandb_run = wandb.init(
+        project="rug-locomotion-ppg", 
+        config=config, 
+        settings=wandb.Settings(start_method="fork"),
+        mode="offline",
+        group="sweep"
+        )
 
     env_name = make_gym_env(config.env, visualize=config.visualize)
 
@@ -182,8 +189,8 @@ def main_head(config):
                 done_info = None
                 info = None
 
-    except KeyboardInterrupt:
-        pass
+    except Exception as e:
+        print("Main Terminated: ", e)
     finally:
         finish = time.time()
         timedelta = finish - start
