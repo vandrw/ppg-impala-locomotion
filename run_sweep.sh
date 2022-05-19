@@ -1,10 +1,10 @@
 #!/bin/bash
 #SBATCH --job-name=myleg_ppg_mpi
-#SBATCH --time=24:00:00
-#SBATCH --output=output/healthy_mpi_%j.out
-#SBATCH --nodes=3
-#SBATCH --ntasks=64
-#SBATCH --mem=32GB
+#SBATCH --time=12:00:00
+#SBATCH --output=output/sweep_mpi_%j.out
+#SBATCH --nodes=1
+#SBATCH --ntasks=11
+#SBATCH --mem=16GB
 #SBATCH --mail-type=ALL
 #SBATCH --mail-user=
 #SBATCH --partition=regular
