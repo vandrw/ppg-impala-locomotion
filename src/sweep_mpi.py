@@ -1,6 +1,7 @@
 from mpi4py import MPI
 
 comm = MPI.COMM_WORLD
+w_size = comm.Get_size()
 rank = comm.Get_rank()
 
 import gym
@@ -9,7 +10,7 @@ import time
 from src.env_loader import make_gym_env
 from src.args import get_args
 
-SWEEP_TIME = 250
+SWEEP_TIME = 150
 
 def main_worker(config):
     from src.ppg.agent import Agent
@@ -122,7 +123,7 @@ def main_head(config):
 
     output_path = Path("output") / config.run_name
 
-    wandb.init(project="rug-locomotion-ppg", config=config, settings=wandb.Settings(start_method="fork"))
+    wandb_run = wandb.init(project="rug-locomotion-ppg", config=config, settings=wandb.Settings(start_method="fork"))
 
     env_name = make_gym_env(config.env, visualize=config.visualize)
 
@@ -154,7 +155,7 @@ def main_head(config):
     output_path = comm.bcast(msg, root=0)
 
     try:
-        for epoch in range(SWEEP_TIME):
+        for epoch in range(SWEEP_TIME + 1):
             data = None
 
             data = comm.recv()
@@ -175,6 +176,8 @@ def main_head(config):
                 info = EpochInfo(epoch, time.time() - start, done_info)
                 if config.log_wandb:
                     wandb.log(asdict(info), step=epoch)
+                
+                print("Epoch {}/{}: {}".format(epoch, SWEEP_TIME, done_info))
 
                 done_info = None
                 info = None
@@ -185,13 +188,14 @@ def main_head(config):
         finish = time.time()
         timedelta = finish - start
         print("Time: {}".format(str(datetime.timedelta(seconds=timedelta))))
-
-        MPI.Finalize()
+        wandb_run.finish()
+        comm.Abort()
 
 if __name__ == "__main__":
     config = get_args()
 
     if rank == 0:
+        print("Number of agents available: ", w_size - 1)
         main_head(config)
     else:
         main_worker(config)
