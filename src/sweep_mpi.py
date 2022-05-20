@@ -7,6 +7,7 @@ rank = comm.Get_rank()
 import gym
 import time
 from math import ceil
+import traceback
 
 from src.env_loader import make_gym_env
 from src.args import get_args
@@ -108,8 +109,9 @@ def main_worker(config):
             data = (trajectory, done_info)
 
             comm.send(data, dest=0)
-    except Exception as e:
-        print("Proc {} Terminated: {}".format(rank, e))
+    except Exception as ex:
+        print("Proc {} Terminated: ".format(rank), end="")
+        traceback.print_exception(type(ex), ex, ex.__traceback__)
 
 
 def main_head(config):
@@ -189,8 +191,9 @@ def main_head(config):
                 done_info = None
                 info = None
 
-    except Exception as e:
-        print("Main Terminated: ", e)
+    except Exception as ex:
+        print("Main terminated: ", end ="")
+        traceback.print_exception(type(ex), ex, ex.__traceback__)
     finally:
         finish = time.time()
         timedelta = finish - start
