@@ -4,6 +4,7 @@ from src.env_loader import make_gym_env
 
 from itertools import count as infinite_range
 import time
+import traceback
 
 from src.args import get_args
 
@@ -107,8 +108,9 @@ def main_worker(args):
             data = (trajectory, done_info)
 
             comm.send(data, dest=0)
-    except KeyboardInterrupt:
-        pass
+    except Exception as ex:
+        print("Proc {} terminated".format(rank))
+        traceback.print_exception(type(ex), ex, ex.__traceback__)
 
 
 def main_head(args):
@@ -184,7 +186,9 @@ def main_head(args):
                 done_info = None
                 info = None
 
-    except KeyboardInterrupt:
+    except Exception as ex:
+        print("Main terminated")
+        traceback.print_exception(type(ex), ex, ex.__traceback__)
         logging.warning("Training has been stopped.")
     finally:
         if wandb_run:

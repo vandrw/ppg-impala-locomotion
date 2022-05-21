@@ -110,7 +110,7 @@ def main_worker(config):
 
             comm.send(data, dest=0)
     except Exception as ex:
-        print("Proc {} Terminated: ".format(rank), end="")
+        print("Proc {} terminated".format(rank))
         traceback.print_exception(type(ex), ex, ex.__traceback__)
 
 
@@ -157,6 +157,12 @@ def main_head(config):
     )
 
     start = time.time()
+
+    if (Path(output_path) / "agent.pth").exists():
+        print("Another agent has initiated training with this configuration. Stopping...")
+        comm.Abort()
+        exit()
+
     learner.save_weights(output_path)
 
     msg = output_path
@@ -192,7 +198,7 @@ def main_head(config):
                 info = None
 
     except Exception as ex:
-        print("Main terminated: ", end ="")
+        print("Main terminated")
         traceback.print_exception(type(ex), ex, ex.__traceback__)
     finally:
         finish = time.time()
