@@ -38,6 +38,7 @@ def main_worker(args):
         def run_episode(self, i_episode, total_reward, eps_time):
 
             self.agent.load_weights(self.save_path)
+            ep_info = None
 
             for _ in range(self.n_update):
                 action, action_mean = self.agent.act(self.states)
@@ -64,7 +65,7 @@ def main_worker(args):
                     self.states = self.env.reset()
                     i_episode += 1
 
-                    info = {
+                    ep_info = {
                         "total_reward": total_reward, 
                         "episode_time": eps_time
                         }
@@ -77,8 +78,7 @@ def main_worker(args):
                 i_episode,
                 total_reward,
                 eps_time,
-                info,
-                # self.tag,
+                ep_info,
             )
 
     msg = None
