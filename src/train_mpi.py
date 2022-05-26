@@ -1,3 +1,7 @@
+# ORIGINAL CODE PROVIDED BY wisnunugroho21 AT
+# https://github.com/wisnunugroho21/reinforcement_learning_phasic_policy_gradient
+# Software is distributed under a GPL-3.0 License.
+
 from mpi4py import MPI
 import gym
 from src.env_loader import make_gym_env
@@ -9,83 +13,17 @@ import traceback
 from src.args import get_args
 
 comm = MPI.COMM_WORLD
+w_size = comm.Get_size() - 1
 rank = comm.Get_rank()
 
 
 def main_worker(args):
-    from src.ppg.agent import Agent
-    import numpy as np
-    class Runner:
-        def __init__(
-            self, experiment_type, training_mode, render, n_update, tag, save_path
-        ):
-            env_name = make_gym_env(experiment_type, visualize=render)
-            self.env = gym.make(env_name)
-            self.states = self.env.reset()
-            self.state_dim = self.env.observation_space.shape[0]
-            self.action_dim = self.env.action_space.shape[0]
-
-            self.agent = Agent(self.state_dim, self.action_dim, training_mode)
-
-            self.tag = tag
-            self.training_mode = training_mode
-            self.n_update = n_update
-            self.max_action = 1.0
-
-            self.save_path = save_path
-            print("[Proc {}] Worker initialized.".format(tag))
-
-        def run_episode(self, i_episode, total_reward, eps_time):
-
-            self.agent.load_weights(self.save_path)
-            ep_info = None
-
-            for _ in range(self.n_update):
-                action, action_mean = self.agent.act(self.states)
-
-                action_gym = np.clip(action, -1.0, 1.0) * self.max_action
-                next_state, reward, done, _ = self.env.step(action_gym)
-
-                eps_time += 1
-                total_reward += reward
-
-                if self.training_mode:
-                    self.agent.save_eps(
-                        self.states.tolist(),
-                        action,
-                        action_mean,
-                        reward,
-                        float(done),
-                        next_state.tolist(),
-                    )
-
-                self.states = next_state
-
-                if done:
-                    self.states = self.env.reset()
-                    i_episode += 1
-
-                    ep_info = {
-                        "total_reward": total_reward, 
-                        "episode_time": eps_time
-                        }
-
-                    total_reward = 0
-                    eps_time = 0
-
-            return (
-                self.agent.get_all(),
-                i_episode,
-                total_reward,
-                eps_time,
-                ep_info,
-            )
+    from src.ppg.runner import RunnerMPI
 
     msg = None
-
     output_path, start_epoch = comm.bcast(msg, root=0)
 
-    runner = Runner(
+    runner = RunnerMPI(
         args.env,
         args.train_mode,
         args.visualize,
@@ -118,7 +56,6 @@ def main_head(args):
 
     from src.ppg.logging import EpochInfo, init_logging
     from dataclasses import asdict
-    from pprint import pformat
 
     from pathlib import Path
     import datetime
@@ -158,7 +95,10 @@ def main_head(args):
 
     output_path, start_epoch = comm.bcast(msg, root=0)
 
+    logging.info("Starting training... Workers available: {}".format(w_size))
     try:
+        avg_reward = 0
+        avg_ep_time = 0
         for epoch in infinite_range(start_epoch):
             data = None
 
@@ -176,15 +116,32 @@ def main_head(args):
 
             learner.save_weights(output_path)
 
-            if epoch % 5 == 0:
-                info = EpochInfo(epoch, time.time() - start, done_info)
-                if args.log_wandb:
-                    wandb.log(asdict(info), step=epoch)
+            avg_reward += done_info["total_reward"]
+            avg_ep_time += done_info["episode_time"]
 
-                logging.info("Epoch information: {}".format(pformat(asdict(info))))
+            if (epoch + 1) % w_size == 0:
+                real_epoch = int(epoch/w_size)
+                avg_reward /= w_size
+                avg_ep_time /= w_size
+
+                if args.log_wandb:
+                    wandb.log(
+                        asdict(
+                            EpochInfo(
+                                real_epoch,
+                                time.time() - start,
+                                avg_reward,
+                                avg_ep_time
+                                )
+                            ), 
+                        step=real_epoch
+                    )
+
+                logging.info("Epoch {}: reward {}, episode time {}".format(real_epoch, avg_reward, avg_ep_time))
 
                 done_info = None
-                info = None
+                avg_reward = 0
+                avg_ep_time = 0
 
     except Exception as ex:
         print("Main terminated")

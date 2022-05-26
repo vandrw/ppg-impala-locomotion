@@ -18,7 +18,8 @@ class DoneInfo:
 class EpochInfo:
     epoch: int
     time: float
-    info: DoneInfo
+    avg_reward: float
+    avg_episode_time: float
 
 def init_output(run_name):
     output_path = Path("output") / run_name

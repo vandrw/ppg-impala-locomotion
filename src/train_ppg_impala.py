@@ -5,7 +5,7 @@
 import gym
 from src.env_loader import make_gym_env
 
-from src.ppg.runner import Runner
+from src.ppg.runner import RunnerRay
 from src.ppg.model import Learner
 
 from src.ppg.logging import EpochInfo, init_logging
@@ -54,7 +54,7 @@ def main(args):
 
     try:
         runners = [
-            Runner.remote(
+            RunnerRay.remote(
                 args.env,
                 args.train_mode,
                 args.visualize,
