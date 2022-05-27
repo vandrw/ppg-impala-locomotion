@@ -87,7 +87,7 @@ endheader
         for _, row in pose_info.iterrows():
             for col in pose_info.columns:
                 if col == "time":
-                    file.write("    {:.8f}".format(row[col]))
+                    file.write("      {:.8f}".format(row[col]))
                 else:
                     file.write("\t     {:.8f}".format(row[col]))
             file.write('\n')
