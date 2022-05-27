@@ -36,11 +36,11 @@ class Runner:
             action_gym = np.clip(action, -1.0, 1.0) * self.max_action
             next_state, reward, done, info = self.env.step(action_gym)
 
+
             pose = asdict(info["obs/dyn_pose"])
             curr_pose["time"] = frame / fps
-            for type in pose:
-                for body in pose[type]:
-                    curr_pose[body] = pose[type][body]
+            for body in pose["pose"]:
+                curr_pose[body] = pose["pose"][body]
             curr_pose["lumbar_extension"] = -5.00000214
 
             if pose_info.empty:
@@ -87,7 +87,7 @@ endheader
         for _, row in pose_info.iterrows():
             for col in pose_info.columns:
                 if col == "time":
-                    file.write("     {:.8f}".format(row[col]))
+                    file.write("    {:.8f}".format(row[col]))
                 else:
                     file.write("\t     {:.8f}".format(row[col]))
             file.write('\n')
