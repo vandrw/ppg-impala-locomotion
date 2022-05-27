@@ -34,7 +34,7 @@ class Agent:
             # Sample the action
             action = self.distributions.sample(action_mean, self.std)
         else:
-            action = action_mean
+            return action_mean.squeeze(0).detach().numpy(), None
 
         return action.squeeze(0).cpu().numpy(), action_mean.squeeze(0).detach().numpy()
 
