@@ -104,6 +104,5 @@ def get_args():
     if args.run_name is None:
         import time
         args.run_name = "{}_{}".format(args.env, time.strftime("%Y%m%d%H%M%S"))
-        print("No unique run name was provided. Automatically named this run '{}'.".format(args.run_name))
 
     return args

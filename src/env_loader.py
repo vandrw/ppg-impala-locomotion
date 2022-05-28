@@ -17,10 +17,8 @@ def make_env(env_type, visualize):
         from opensim_env.observation.concrete import RobinHealthyObserver
         from opensim_env.reward.concrete import RobinHealthyEvaluator
 
-        config = OpensimEnvConfig(HEALTHY_PATH, visualize=visualize)
-
         return OpensimEnv(
-            config,
+            OpensimEnvConfig(HEALTHY_PATH, init_pose=data.get_row(0), visualize=visualize),
             lambda c: RobinHealthyObserver(c, data),
             DumbExampleController,
             lambda c: RobinHealthyEvaluator(c, data, 0.01, 1.0),
@@ -31,10 +29,8 @@ def make_env(env_type, visualize):
 
         HEALTHY_TERRAIN_PATH = Path("osim-models") / "OS4_gait14dof22musc_terrain.osim"
 
-        config = OpensimEnvConfig(HEALTHY_TERRAIN_PATH, visualize=visualize)
-
         return OpensimEnv(
-            config,
+            OpensimEnvConfig(HEALTHY_TERRAIN_PATH, init_pose=data.get_row(0), visualize=visualize),
             lambda c: RobinHealthyObserver(c, data),
             DumbExampleController,
             lambda c: RobinHealthyEvaluator(c, data, 0.01, 1.0),

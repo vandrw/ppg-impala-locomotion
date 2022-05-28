@@ -2,8 +2,7 @@
 #SBATCH --job-name=myleg_ppg_mpi
 #SBATCH --time=7-00:00
 #SBATCH --output=output/healthy_mpi_%j.out
-#SBATCH --nodes=2
-#SBATCH --ntasks=48
+#SBATCH --ntasks=51
 #SBATCH --mem=32GB
 #SBATCH --mail-type=ALL
 #SBATCH --mail-user=
