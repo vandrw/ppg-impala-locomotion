@@ -24,13 +24,12 @@ def make_env(env_type, visualize):
             lambda c: RobinHealthyEvaluator(c, data, 0.01, 1.0),
         )
     elif env_type == "healthy_terrain":
+        from opensim_env.models import HEALTHY_ROUGH_TERRAIN_PATH
         from opensim_env.observation.concrete import RobinHealthyObserver
         from opensim_env.reward.concrete import RobinHealthyEvaluator
 
-        HEALTHY_TERRAIN_PATH = Path("osim-models") / "OS4_gait14dof22musc_terrain.osim"
-
         return OpensimEnv(
-            OpensimEnvConfig(HEALTHY_TERRAIN_PATH, init_pose=data.get_row(0), visualize=visualize),
+            OpensimEnvConfig(HEALTHY_ROUGH_TERRAIN_PATH, init_pose=data.get_row(0), visualize=visualize),
             lambda c: RobinHealthyObserver(c, data),
             DumbExampleController,
             lambda c: RobinHealthyEvaluator(c, data, 0.01, 1.0),
