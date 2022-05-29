@@ -10,7 +10,7 @@ from opensim_env.interface.core import OpensimGymEnv
 
 def make_env(env_type, visualize):
     data_path = Path("data") / "motion_AB06_13,297.csv"
-    data = TrainingData(data_path, start_time=13.295)
+    data = TrainingData(data_path, start_time=14.2)
 
     if env_type == "healthy":
         from opensim_env.models import HEALTHY_PATH
