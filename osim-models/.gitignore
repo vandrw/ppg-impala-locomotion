@@ -1,7 +1,0 @@
-Geometry/*
-!Geometry/README.txt
-
-*.osim
-opensim.log
-!healthy_terrain.osim
-!healthy-andrei.osim
