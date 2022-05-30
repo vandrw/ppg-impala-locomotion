@@ -21,7 +21,7 @@ def main_worker(args):
     from src.ppg.runner import RunnerMPI
 
     msg = None
-    output_path, start_epoch = comm.bcast(msg, root=0)
+    output_path = comm.bcast(msg, root=0)
 
     runner = RunnerMPI(
         args.env,
@@ -38,7 +38,7 @@ def main_worker(args):
     time.sleep(3)
 
     try:
-        for _ in infinite_range(start_epoch):
+        for _ in infinite_range(0):
             trajectory, i_episode, total_reward, eps_time, done_info = runner.run_episode(
                 i_episode, total_reward, eps_time
             )
@@ -91,9 +91,9 @@ def main_head(args):
     if not continue_run:
         learner.save_weights(output_path)
 
-    msg = (output_path, start_epoch)
+    msg = (output_path)
 
-    output_path, start_epoch = comm.bcast(msg, root=0)
+    output_path = comm.bcast(msg, root=0)
 
     logging.info("Starting training... Workers available: {}".format(w_size))
     try:
@@ -146,8 +146,8 @@ def main_head(args):
     except Exception as ex:
         print("Main terminated")
         traceback.print_exception(type(ex), ex, ex.__traceback__)
-        logging.warning("Training has been stopped.")
     finally:
+        logging.warning("Training has been stopped.")
         if wandb_run:
             wandb_run.finish()
     
