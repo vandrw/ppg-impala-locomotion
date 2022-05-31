@@ -3,6 +3,10 @@
 # Software is distributed under a GPL-3.0 License.
 
 from mpi4py import MPI
+comm = MPI.COMM_WORLD
+w_size = comm.Get_size() - 1
+rank = comm.Get_rank()
+
 import gym
 from src.env_loader import make_gym_env
 
@@ -12,9 +16,6 @@ import traceback
 
 from src.args import get_args
 
-comm = MPI.COMM_WORLD
-w_size = comm.Get_size() - 1
-rank = comm.Get_rank()
 
 
 def main_worker(args):
