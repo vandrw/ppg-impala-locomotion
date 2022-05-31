@@ -92,6 +92,8 @@ endheader
                     file.write("\t     {:.8f}".format(row[col]))
             file.write('\n')
 
+    print("Motion saved at {}".format(str(Path(args.path) / "episode.mot")))
+
 
 if __name__ == "__main__":
     parser = argparse.ArgumentParser(add_help=False)
