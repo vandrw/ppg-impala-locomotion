@@ -18,7 +18,7 @@ class Runner:
         self.state_dim = self.env.observation_space.shape[0]
         self.action_dim = self.env.action_space.shape[0]
 
-        self.agent = Agent(self.state_dim, self.action_dim, False)
+        self.agent = Agent(self.state_dim, self.action_dim, True)
 
         self.max_action = 1.0
 
