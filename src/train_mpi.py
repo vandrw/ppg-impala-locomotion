@@ -138,7 +138,7 @@ def main_head(args):
                         step=real_epoch
                     )
 
-                logging.info("Epoch {}: reward {}, episode time {}".format(real_epoch, avg_reward, avg_ep_time))
+                logging.info("Epoch {} (trajectory {}): reward {}, episode time {}".format(real_epoch, epoch, avg_reward, avg_ep_time))
 
                 done_info = None
                 avg_reward = 0
