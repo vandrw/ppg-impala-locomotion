@@ -16,7 +16,7 @@ class DoneInfo:
     reward_partials: Dict[str, float]
 @dataclass
 class EpochInfo:
-    epoch: int
+    trajectory: int
     time: float
     avg_reward: float
     avg_episode_time: float

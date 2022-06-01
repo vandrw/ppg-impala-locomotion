@@ -129,7 +129,7 @@ def main_head(args):
                     wandb.log(
                         asdict(
                             EpochInfo(
-                                real_epoch,
+                                epoch,
                                 time.time() - start,
                                 avg_reward,
                                 avg_ep_time
