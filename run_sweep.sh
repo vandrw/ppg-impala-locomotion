@@ -4,7 +4,6 @@
 #SBATCH --output=output/sweep_mpi_%j.out
 #SBATCH --nodes=1
 #SBATCH --ntasks=11
-#SBATCH --mem=16GB
 #SBATCH --mail-type=ALL
 #SBATCH --mail-user=
 #SBATCH --partition=regular

@@ -37,6 +37,10 @@ def get_args():
         help="The environment type used. Currently supports the healthy and prosthesis models.",
     )
     parser.add_argument(
+        "--data",
+        help="The data used. Currently supports the 'AB06' and 'AB23' subjects.",
+    )
+    parser.add_argument(
         "--run_name",
         type=str,
         help="Display name to use in wandb. Also used for the path to save the model. Provide a unique name.",

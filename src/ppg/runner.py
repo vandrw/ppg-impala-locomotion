@@ -9,9 +9,9 @@ import ray
 
 class RunnerMPI:
     def __init__(
-        self, experiment_type, training_mode, render, n_update, tag, save_path
+        self, experiment_type, data_subject, training_mode, render, n_update, tag, save_path
     ):
-        env_name = make_gym_env(experiment_type, visualize=render)
+        env_name = make_gym_env(experiment_type, data_subject=data_subject, visualize=render)
         self.env = gym.make(env_name)
         self.states = self.env.reset()
         self.state_dim = self.env.observation_space.shape[0]

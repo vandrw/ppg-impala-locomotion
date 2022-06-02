@@ -3,7 +3,7 @@
 #SBATCH --time=7-00:00
 #SBATCH --output=output/healthy_mpi_%j.out
 #SBATCH --ntasks=51
-#SBATCH --mem=32GB
+#SBATCH --mem=10GB
 #SBATCH --mail-type=ALL
 #SBATCH --mail-user=
 #SBATCH --partition=regular

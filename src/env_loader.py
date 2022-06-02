@@ -8,9 +8,16 @@ from opensim_env.data import TrainingData
 from opensim_env.env import OpensimEnv
 from opensim_env.interface.core import OpensimGymEnv
 
-def make_env(env_type, visualize):
-    data_path = Path("data") / "motion_AB06_13,297.csv"
-    data = TrainingData(data_path, start_time=14.2)
+def make_env(env_type, data_subject, visualize):
+
+    if data_subject == "AB06":
+        data_path = Path("data") / "AB06_transformed_inDegrees_14,2.csv"
+        data = TrainingData(data_path, start_time=14.2)
+    elif data_subject == "AB23":
+        data_path = Path("data") / "AB23_transformed_inDegrees_6,52.csv"
+        data = TrainingData(data_path, start_time=6.52)
+    else:
+        raise ValueError("The provided subject name does not exist.")
 
     if env_type == "healthy":
         from opensim_env.models import HEALTHY_PATH
@@ -45,8 +52,8 @@ def make_env(env_type, visualize):
         raise ValueError("The environment type specified does not exist.")
 
 
-def make_gym_env(env_type, visualize):
+def make_gym_env(env_type, data_subject, visualize):
     gym.register(
-        "OpenSimEnv-v1", entry_point=OpensimGymEnv, kwargs=dict(env=lambda: make_env(env_type, visualize))
+        "OpenSimEnv-v1", entry_point=OpensimGymEnv, kwargs=dict(env=lambda: make_env(env_type, data_subject, visualize))
     )
     return "OpenSimEnv-v1"

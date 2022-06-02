@@ -26,6 +26,7 @@ def main_worker(args):
 
     runner = RunnerMPI(
         args.env,
+        args.data,
         args.train_mode,
         args.visualize,
         args.n_update,
@@ -36,7 +37,6 @@ def main_worker(args):
     trajectory, i_episode, total_reward, eps_time, done_info = runner.run_episode(rank, 0, 0)
     data = (trajectory, done_info)
     comm.send(data, dest=0)
-    time.sleep(3)
 
     try:
         for _ in infinite_range(0):
@@ -66,7 +66,7 @@ def main_head(args):
 
     wandb_run, continue_run, start_epoch, output_path = init_logging(args)
 
-    env_name = make_gym_env(args.env, visualize=args.visualize)
+    env_name = make_gym_env(args.env, args.data, visualize=args.visualize)
 
     env = gym.make(env_name)
     state_dim = env.observation_space.shape[0]
