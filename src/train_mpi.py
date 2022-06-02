@@ -3,6 +3,7 @@
 # Software is distributed under a GPL-3.0 License.
 
 from mpi4py import MPI
+
 comm = MPI.COMM_WORLD
 w_size = comm.Get_size() - 1
 rank = comm.Get_rank()
@@ -15,7 +16,6 @@ import time
 import traceback
 
 from src.args import get_args
-
 
 
 def main_worker(args):
@@ -35,6 +35,7 @@ def main_worker(args):
     )
 
     trajectory, i_episode, total_reward, eps_time, done_info = runner.run_episode(rank, 0, 0)
+
     data = (trajectory, done_info)
     comm.send(data, dest=0)
 
@@ -45,7 +46,6 @@ def main_worker(args):
             )
 
             data = (trajectory, done_info)
-
             comm.send(data, dest=0)
     except Exception as ex:
         print("Proc {} terminated".format(rank))
@@ -92,24 +92,21 @@ def main_head(args):
     if not continue_run:
         learner.save_weights(output_path)
 
-    msg = (output_path)
-
+    msg = output_path
     output_path = comm.bcast(msg, root=0)
 
     logging.info("Starting training... Workers available: {}".format(w_size))
     try:
         avg_reward = 0
         avg_ep_time = 0
+        data = None
         for epoch in infinite_range(start_epoch):
-            data = None
 
             data = comm.recv()
             trajectory, done_info = data
 
             states, actions, action_means, rewards, dones, next_states = trajectory
-            learner.save_all(
-                states, actions, action_means, rewards, dones, next_states
-            )
+            learner.save_all(states, actions, action_means, rewards, dones, next_states)
 
             learner.update_ppo()
             if epoch % args.n_aux_update == 0:
@@ -121,7 +118,7 @@ def main_head(args):
             avg_ep_time += done_info["episode_time"]
 
             if (epoch + 1) % w_size == 0:
-                real_epoch = int(epoch/w_size)
+                real_epoch = int(epoch / w_size)
                 avg_reward /= w_size
                 avg_ep_time /= w_size
 
@@ -133,12 +130,16 @@ def main_head(args):
                                 time.time() - start,
                                 avg_reward,
                                 avg_ep_time
-                                )
-                            ), 
-                        step=real_epoch
+                            )
+                        ),
+                        step=real_epoch,
                     )
 
-                logging.info("Epoch {} (trajectory {}): reward {}, episode time {}".format(real_epoch, epoch, avg_reward, avg_ep_time))
+                logging.info(
+                    "Epoch {} (trajectory {}): reward {}, episode time {}".format(
+                        real_epoch, epoch, avg_reward, avg_ep_time
+                    )
+                )
 
                 done_info = None
                 avg_reward = 0
@@ -151,7 +152,7 @@ def main_head(args):
         logging.warning("Training has been stopped.")
         if wandb_run:
             wandb_run.finish()
-    
+
         with open(Path(output_path) / "epoch.info", "w") as ep_file:
             ep_file.write(str(epoch))
 
@@ -159,12 +160,12 @@ def main_head(args):
         timedelta = finish - start
         logging.info("Time: {}".format(str(datetime.timedelta(seconds=timedelta))))
 
-        MPI.Finalize()
+        comm.Abort()
 
 
 if __name__ == "__main__":
     args = get_args()
-    
+
     if rank == 0:
         main_head(args)
     else:
