@@ -28,7 +28,7 @@ class RunnerMPI:
         print("[Proc {}] Worker initialized.".format(tag))
 
     def run_episode(self, i_episode, total_reward, eps_time):
-
+        self.agent.memory.clear_memory()
         self.agent.load_weights(self.save_path)
         ep_info = None
 
