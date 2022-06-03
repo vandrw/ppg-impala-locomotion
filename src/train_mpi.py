@@ -141,7 +141,6 @@ def main_head(args):
                     )
                 )
 
-                done_info = None
                 avg_reward = 0
                 avg_ep_time = 0
 
