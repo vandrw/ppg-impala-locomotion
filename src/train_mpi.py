@@ -37,7 +37,7 @@ def main_worker(args):
     trajectory, i_episode, total_reward, eps_time, done_info = runner.run_episode(rank, 0, 0)
 
     data = (trajectory, done_info)
-    comm.send(data, dest=0)
+    req = comm.isend(data, dest=0)
 
     try:
         for _ in infinite_range(0):
@@ -45,8 +45,9 @@ def main_worker(args):
                 i_episode, total_reward, eps_time
             )
 
+            req.wait()
             data = (trajectory, done_info)
-            comm.send(data, dest=0)
+            req = comm.isend(data, dest=0)
     except Exception as ex:
         print("Proc {} terminated".format(rank))
         traceback.print_exception(type(ex), ex, ex.__traceback__)
