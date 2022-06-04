@@ -9,8 +9,8 @@ import time
 from math import ceil
 import traceback
 
-from src.env_loader import make_gym_env
-from src.args import get_args
+from src.utils.env_loader import make_gym_env
+from src.utils.args import get_args
 
 SWEEP_TIME = 150
 

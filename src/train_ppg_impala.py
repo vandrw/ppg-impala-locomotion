@@ -3,7 +3,7 @@
 # Software is distributed under a GPL-3.0 License.
 
 import gym
-from src.env_loader import make_gym_env
+from src.utils.env_loader import make_gym_env
 
 from src.ppg.runner import RunnerRay
 from src.ppg.model import Learner
@@ -17,7 +17,7 @@ from pathlib import Path
 import time
 import datetime
 
-from src.args import get_args
+from src.utils.args import get_args
 import logging
 
 import ray

@@ -9,13 +9,13 @@ w_size = comm.Get_size() - 1
 rank = comm.Get_rank()
 
 import gym
-from src.env_loader import make_gym_env
+from src.utils.env_loader import make_gym_env
 
 from itertools import count as infinite_range
 import time
 import traceback
 
-from src.args import get_args
+from src.utils.args import get_args
 
 
 def main_worker(args):

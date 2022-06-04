@@ -1,5 +1,5 @@
 from itertools import count as infinite_range
-from src.env_loader import make_gym_env
+from src.utils.env_loader import make_gym_env
 from src.ppg.agent import Agent
 from dataclasses import asdict
 from pathlib import Path
@@ -8,11 +8,10 @@ import pandas as pd
 import argparse
 import gym
 
+
 class Runner:
-    def __init__(
-        self, experiment_type, save_path
-    ):
-        env_name = make_gym_env(experiment_type, visualize=False)
+    def __init__(self, experiment_type, data, save_path):
+        env_name = make_gym_env(experiment_type, data, visualize=False)
         self.env = gym.make(env_name)
         self.states = self.env.reset()
         self.state_dim = self.env.observation_space.shape[0]
@@ -36,7 +35,6 @@ class Runner:
             action_gym = np.clip(action, -1.0, 1.0) * self.max_action
             next_state, reward, done, info = self.env.step(action_gym)
 
-
             pose = asdict(info["obs/dyn_pose"])
             curr_pose["time"] = frame / fps
             for body in pose["pose"]:
@@ -48,7 +46,7 @@ class Runner:
             else:
                 pose_info.loc[-1] = curr_pose.values()
                 pose_info.index += 1
-                
+
             total_reward += reward
             self.states = next_state
 
@@ -57,13 +55,20 @@ class Runner:
 
                 return pose_info
 
+
 def main(args):
-    runner = Runner(args.env, args.path)
+    print(
+        "Creating motion with environment '{}' and starting data '{}' at {} FPS...".format(
+            args.env, args.data, args.fps
+        )
+    )
+
+    runner = Runner(args.env, args.data, args.folder_path)
 
     pose_info = runner.get_motion(args.fps)
-    with (Path(args.path) / "episode.mot").open("w") as file:
+    with (Path(args.folder_path) / "episode.mot").open("w") as file:
         file.write(
-"""Coordinates
+            """Coordinates
 version=1
 nRows={}
 nColumns={}
@@ -73,7 +78,9 @@ Units are S.I. units (second, meters, Newtons, ...)
 If the header above contains a line with 'inDegrees', this indicates whether rotational values are in degrees (yes) or radians (no).
 
 endheader
-""".format(pose_info.shape[0], pose_info.shape[1])
+""".format(
+                pose_info.shape[0], pose_info.shape[1]
+            )
         )
 
         for col in pose_info.columns:
@@ -82,7 +89,7 @@ endheader
             else:
                 file.write("\t{}".format(col))
 
-        file.write('\n')
+        file.write("\n")
 
         for _, row in pose_info.iterrows():
             for col in pose_info.columns:
@@ -90,27 +97,35 @@ endheader
                     file.write("      {:.8f}".format(row[col]))
                 else:
                     file.write("\t     {:.8f}".format(row[col]))
-            file.write('\n')
+            file.write("\n")
 
-    print("Motion saved at {}".format(str(Path(args.path) / "episode.mot")))
+    print("Motion saved at {}".format(str(Path(args.folder_path) / "episode.mot")))
 
 
 if __name__ == "__main__":
-    parser = argparse.ArgumentParser(add_help=False)
+    parser = argparse.ArgumentParser()
+    parser.add_argument(
+        "folder_path",
+        type=str,
+        help="Path to the folder of the model checkpoint. Only the folder!",
+    )
     parser.add_argument(
         "--env",
-        help="The environment type used. Currently supports the healthy and prosthesis models.",
+        help="The environment type: 'healthy' or 'healthy_terrain'.",
+        default="healthy",
     )
+
+    parser.add_argument(
+        "--data",
+        help="The participant whose data was used: 'AB06' or 'AB23'.",
+        default="AB06",
+    )
+
     parser.add_argument(
         "--fps",
         type=int,
         default=200,
         help="How many frames per second the result will have.",
-    )
-    parser.add_argument(
-        "--path",
-        type=str,
-        help="Path to the folder of the model checkpoint. Only the folder!",
     )
 
     args = parser.parse_args()
