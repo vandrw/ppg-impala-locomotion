@@ -88,10 +88,18 @@ If you are running on your own machine and have a graphical user interface avail
 python -m src.utils.visualize_model output/example_run_name
 ```
 
-However, if you are running the code on the cluster or you do not have a graphical user interface, you can run the command below to generate a motion file. This file can then be imported in OpenSim, along with the model you used.
+However, if you are running the code on the cluster or you do not have a graphical user interface, you can run the command below to generate a motion file. This file can then be imported in OpenSim, along with the model you used. Please take a look first at the command help to see what it can do.
 ```
 python -m src.utils.generate_motion output/example_run_name
 ```
+
+If you do not have access to the OpenSim visualizer, you can also generate a `.csv` file and visualize it using the playback script.
+```
+python -m src.utils.generate_motion output/example_run_name --csv
+python -m src.utils.playback output/example_run_name/episode.csv --speed 0.2
+
+```
+
 # Building OpenSim from source on Peregrine
 If you already have access to the Peregrine cluster, you can run the commands below on one of the nodes to have access to the latest OpenSim version.
 
