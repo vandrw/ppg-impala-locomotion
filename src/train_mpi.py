@@ -29,7 +29,7 @@ def main_worker(args):
         args.data,
         args.train_mode,
         args.visualize,
-        args.n_update,
+        args.n_steps,
         rank,
         save_path=output_path,
     )
@@ -76,15 +76,18 @@ def main_head(args):
         state_dim,
         action_dim,
         args.train_mode,
-        args.policy_kl_range,
-        args.policy_params,
+        args.ppo_delta,
+        args.ppo_alpha,
         args.value_clip,
         args.entropy_coef,
         args.vf_loss_coef,
-        args.batch_size,
-        args.PPO_epochs,
+        args.ppo_batch_size,
+        args.n_ppo_epochs,
+        args.aux_batch_size,
+        args.n_aux_epochs,
+        args.beta_clone,
         args.gamma,
-        args.lam,
+        args.lambd,
         args.learning_rate,
     )
 
@@ -165,7 +168,10 @@ def main_head(args):
 if __name__ == "__main__":
     args = get_args()
 
+    args.num_workers = w_size
+
     if rank == 0:
+        print(args)
         main_head(args)
     else:
         main_worker(args)

@@ -1,6 +1,7 @@
 import argparse
 import yaml
 
+
 def _parse_args(parser, config_parser):
     # Do we have a config file to parse?
     args_config, remaining = config_parser.parse_known_args()
@@ -14,6 +15,7 @@ def _parse_args(parser, config_parser):
     args = parser.parse_args(remaining)
 
     return args
+
 
 def get_args():
     # The first arg parser parses out only the --config argument, this argument is used to
@@ -32,26 +34,22 @@ def get_args():
     parser = argparse.ArgumentParser(
         description="PyTorch implementation of Phasic Policy Gradient for training Physics based Musculoskeletal Models."
     )
+
+    # OpenSim
     parser.add_argument(
         "--env",
-        help="The environment type used. Currently supports the healthy and prosthesis models.",
+        help="The environment type used. Which model to import: 'healthy' or 'healthy_terrain'.",
     )
     parser.add_argument(
         "--data",
-        help="The data used. Currently supports the 'AB06' and 'AB23' subjects.",
+        help="The dataset used. Currently supports the 'AB06' and 'AB23' subjects.",
     )
+
+    # Logging
     parser.add_argument(
         "--run_name",
         type=str,
-        help="Display name to use in wandb. Also used for the path to save the model. Provide a unique name.",
-    )
-    parser.add_argument(
-        "--log_wandb", action="store_true", help="Whether to save output on wandb."
-    )
-    parser.add_argument(
-        "--train_mode",
-        action="store_true",
-        help="Whether to save new checkpoints during learning. If used, there will be changes made to the model.",
+        help="Display name to use in wandb. Also used for the path to save the model. Provide a unique name, or give the same name to continue training.",
     )
     parser.add_argument(
         "--visualize",
@@ -59,16 +57,14 @@ def get_args():
         help="Display the environment. Disregard this argument if you run this on Peregrine/Google Collab.",
     )
     parser.add_argument(
-        "--n_update",
-        type=int,
-        default=1024,
-        help="How many episodes before the Policy is updated. Also regarded as the simulation budget (steps) per iteration.",
+        "--log_wandb", action="store_true", help="Whether to save output on wandb."
     )
+
+    # Worker
     parser.add_argument(
-        "--n_aux_update",
-        type=int,
-        default=5,
-        help="How many episodes before the Auxiliary is updated.",
+        "--train_mode",
+        action="store_true",
+        help="Whether to save new checkpoints during learning. If used, there will be changes made to the model.",
     )
     parser.add_argument(
         "--num_workers",
@@ -76,28 +72,101 @@ def get_args():
         default=4,
         help="How many agents you want to run asynchronously. Only used for the Ray implementation.",
     )
-    parser.add_argument("--policy_kl_range", type=float, default=0.03, help="TODO.")
-    parser.add_argument("--policy_params", type=int, default=5, help="TODO.")
-    parser.add_argument("--value_clip", type=float, default=1.0, help="TODO.")
+    parser.add_argument(
+        "--n_steps",
+        type=int,
+        default=1024,
+        help="How many steps to perform in the environment before the networks are updated (per worker).",
+    )
+
+    # TrulyPPO
+    parser.add_argument(
+        "--n_ppo_epochs",
+        type=int,
+        default=5,
+        help="For how many epochs to update the PPO networks (both value and policy).",
+    )
+    parser.add_argument(
+        "--ppo_batch_size",
+        type=int,
+        default=16,
+        help="Indicates how many batches will be used per update. The number of batches is equal to n_steps / batch_size.",
+    )
+    parser.add_argument(
+        "--ppo_delta",
+        type=float,
+        default=0.05,
+        help="Decides the amount of clipping, indicating the (KL) trust region for the policy.",
+    )
+    parser.add_argument(
+        "--ppo_alpha", type=int, default=5, help="Decides the force of the rollback."
+    )
+
+    # Critic (PPO)
+    parser.add_argument(
+        "--value_clip",
+        type=float,
+        default=1.0,
+        help="How much the critic values will be clipped, resulting in predicted values in the interval [-value_clip, value_clip].",
+    )
     parser.add_argument(
         "--entropy_coef",
         type=float,
         default=0.0,
         help="How much action randomness is introduced.",
     )
-    parser.add_argument("--vf_loss_coef", type=float, default=1.0, help="TODO.")
     parser.add_argument(
-        "--batch_size",
+        "--vf_loss_coef",
+        type=float,
+        default=1.0,
+        help="Value function coefficient. Indicates how much the critic loss is taken into account.",
+    )
+
+    # Auxiliary
+    parser.add_argument(
+        "--n_aux_update",
+        type=int,
+        default=16,
+        help="After how many sets of trajectories the Auxiliary is updated.",
+    )
+    parser.add_argument(
+        "--n_aux_epochs",
+        type=int,
+        default=6,
+        help="For how many epochs to train the Auxiliary policy.",
+    )
+    parser.add_argument(
+        "--aux_batch_size",
         type=int,
         default=32,
-        help="How many batches per update. The number of batches is given by the number of updates divided by the batch size.",
+        help="The size of each minibatches, per auxiliary epoch.",
     )
     parser.add_argument(
-        "--PPO_epochs", type=int, default=10, help="How many PPO epochs per update."
+        "--beta_clone",
+        type=float,
+        default=1.0,
+        help="Controls the trade-off between the old and new Auxiliary policy.",
     )
-    parser.add_argument("--gamma", type=float, default=0.99, help="TODO.")
-    parser.add_argument("--lam", type=float, default=0.95, help="TODO.")
-    parser.add_argument("--learning_rate", type=float, default=2.5e-4, help="TODO.")
+
+    # Optimization
+    parser.add_argument(
+        "--gamma",
+        type=float,
+        default=0.99,
+        help="Discount factor. Reduces the value of future states.",
+    )
+    parser.add_argument(
+        "--lambd",
+        type=float,
+        default=0.95,
+        help="GAE parameter used to reduce variance during training.",
+    )
+    parser.add_argument(
+        "--learning_rate",
+        type=float,
+        default=2.5e-4,
+        help="Indicates the step-size taken during gradient descent.",
+    )
 
     args = _parse_args(parser, config_parser)
 
@@ -107,6 +176,7 @@ def get_args():
 
     if args.run_name is None:
         import time
+
         args.run_name = "{}_{}".format(args.env, time.strftime("%Y%m%d%H%M%S"))
 
     return args

@@ -263,7 +263,7 @@ class TrulyPPO:
         pg_targets = torch.where(
             (Kl >= self.policy_kl_range) & (ratios > 1),
             ratios * Advantages - self.policy_params * Kl,
-            ratios * Advantages,
+            ratios * Advantages - self.policy_kl_range,
         )
         pg_loss = pg_targets.mean()
 
@@ -292,8 +292,9 @@ class TrulyPPO:
 
 
 class JointAux:
-    def __init__(self):
+    def __init__(self, beta_clone):
         self.distributions = Continous()
+        self.beta_clone = beta_clone
 
     def compute_loss(
         self, action_mean, action_std, old_action_mean, old_action_std, values, Returns
@@ -307,7 +308,7 @@ class JointAux:
         ).mean()
         aux_loss = ((Returns - values).pow(2) * 0.5).mean()
 
-        return aux_loss + Kl
+        return aux_loss + self.beta_clone * Kl
 
 
 class Learner:
@@ -321,8 +322,11 @@ class Learner:
         value_clip,
         entropy_coef,
         vf_loss_coef,
-        batchsize,
-        PPO_epochs,
+        ppo_batchsize,
+        ppo_epochs,
+        aux_batchsize,
+        aux_epochs,
+        beta_clone,
         gamma,
         lam,
         learning_rate,
@@ -332,8 +336,10 @@ class Learner:
         self.value_clip = value_clip
         self.entropy_coef = entropy_coef
         self.vf_loss_coef = vf_loss_coef
-        self.batchsize = batchsize
-        self.PPO_epochs = PPO_epochs
+        self.ppo_batchsize = ppo_batchsize
+        self.n_ppo_epochs = ppo_epochs
+        self.aux_batchsize = aux_batchsize
+        self.n_aux_epochs = aux_epochs
         self.is_training_mode = is_training_mode
         self.action_dim = action_dim
         self.std = torch.ones([1, action_dim]).float().to(device)
@@ -358,7 +364,7 @@ class Learner:
         )
 
         self.aux_memory = AuxMemory()
-        self.aux_loss = JointAux()
+        self.aux_loss = JointAux(beta_clone)
 
         self.distributions = Continous()
 
@@ -428,10 +434,10 @@ class Learner:
 
     # Update the model
     def update_ppo(self):
-        dataloader = DataLoader(self.policy_memory, self.batchsize, shuffle=False)
+        dataloader = DataLoader(self.policy_memory, self.ppo_batchsize, shuffle=False)
 
         # Optimize policy for K epochs:
-        for _ in range(self.PPO_epochs):
+        for _ in range(self.n_ppo_epochs):
             for (
                 states,
                 actions,
@@ -459,10 +465,10 @@ class Learner:
         self.value_old.load_state_dict(self.value.state_dict())
 
     def update_aux(self):
-        dataloader = DataLoader(self.aux_memory, self.batchsize, shuffle=False)
+        dataloader = DataLoader(self.aux_memory, self.aux_batchsize, shuffle=False)
 
         # Optimize policy for K epochs:
-        for _ in range(self.PPO_epochs):
+        for _ in range(self.n_aux_epochs):
             for states in dataloader:
                 self.training_aux(states.float().to(device))
 
