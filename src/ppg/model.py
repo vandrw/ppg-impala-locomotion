@@ -24,7 +24,7 @@ class Policy_Model(nn.Module):
 
         self.actor_layer = nn.Sequential(
                 nn.Linear(128, action_dim),
-                nn.Tanh()
+                nn.Sigmoid()
               ).float().to(self.device)
 
         self.critic_layer = nn.Sequential(
@@ -342,7 +342,7 @@ class Learner:
         self.n_aux_epochs = aux_epochs
         self.is_training_mode = is_training_mode
         self.action_dim = action_dim
-        self.std = torch.ones([1, action_dim]).float().to(device)
+        self.std = torch.ones([1, action_dim]).float().to(device) * 0.5
 
         self.policy = Policy_Model(state_dim, action_dim)
         self.policy_old = Policy_Model(state_dim, action_dim)

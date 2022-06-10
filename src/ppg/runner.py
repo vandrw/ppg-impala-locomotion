@@ -35,7 +35,7 @@ class RunnerMPI:
         for _ in range(self.n_update):
             action, action_mean = self.agent.act(self.states)
 
-            action_gym = np.clip(action, -1.0, 1.0) * self.max_action
+            action_gym = np.clip(action, 0.0, 1.0) * self.max_action
             next_state, reward, done, _ = self.env.step(action_gym)
 
             eps_time += 1
