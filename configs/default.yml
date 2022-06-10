@@ -4,7 +4,7 @@ data: "AB06"            # What dataset to use ("AB06" or "AB23").
 
 # Logging
 visualize: False        # If you want to display the image, set this to True. Turn this off if you run this on Peregrine/Google Collab.
-log_wandb: False         # Enables logging in wandb.
+log_wandb: True         # Enables logging in wandb.
 
 # Worker
 train_mode: True        # If you want to train the agent, set this to True. If false, no changes will be made to the model.
