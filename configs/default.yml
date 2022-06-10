@@ -23,7 +23,7 @@ entropy_coef: 0.0       # How much action randomness is introduced. Because we u
 vf_loss_coef: 1.0       # Value function coefficient. Indicates how much the critic loss is taken into account.
 
 # Auxiliary
-n_aux_update: 16        # After how many sets of trajectories the Auxiliary is updated.
+n_aux_update: 32        # After how many sets of trajectories the Auxiliary is updated.
 n_aux_epochs: 6         # For how many epochs to train the Auxiliary policy.
 aux_batch_size: 32      # The size of each minibatches, per auxiliary epoch. 
 beta_clone: 1.0         # Controls the trade-off between the old and new Auxiliary policy.
