@@ -12,8 +12,8 @@ num_workers: 50         # How many agents you want to run asynchronously in Ray.
 n_steps: 1024           # How many steps to perform in the environment before the networks are updated (per worker).
 
 # TrulyPPO
-n_ppo_epochs: 3         # For how many epochs to update the PPO networks (both value and policy).
-ppo_batch_size: 16      # Indicates how many batches will be used per update. The number of batches is equal to n_steps / batch_size.
+n_ppo_epochs: 5         # For how many epochs to update the PPO networks (both value and policy).
+ppo_batch_size: 32      # Indicates how many batches will be used per update. The number of batches is equal to n_steps / batch_size.
 ppo_delta: 0.05         # Decides the amount of clipping, indicating the (KL) trust region for the policy.
 ppo_alpha: 5            # Decides the force of the rollback.
 
@@ -25,7 +25,7 @@ vf_loss_coef: 1.0       # Value function coefficient. Indicates how much the cri
 # Auxiliary
 n_aux_update: 32        # After how many sets of trajectories the Auxiliary is updated.
 n_aux_epochs: 6         # For how many epochs to train the Auxiliary policy.
-aux_batch_size: 32      # The size of each minibatches, per auxiliary epoch. 
+aux_batch_size: 64      # The size of each minibatches, per auxiliary epoch. 
 beta_clone: 1.0         # Controls the trade-off between the old and new Auxiliary policy.
 
 # Optimization
