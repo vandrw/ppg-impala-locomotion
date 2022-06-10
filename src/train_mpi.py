@@ -171,7 +171,6 @@ if __name__ == "__main__":
     args.num_workers = w_size
 
     if rank == 0:
-        print(args)
         main_head(args)
     else:
         main_worker(args)
