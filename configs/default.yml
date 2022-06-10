@@ -12,7 +12,7 @@ num_workers: 50         # How many agents you want to run asynchronously in Ray.
 n_steps: 1024           # How many steps to perform in the environment before the networks are updated (per worker).
 
 # TrulyPPO
-n_ppo_epochs: 5         # For how many epochs to update the PPO networks (both value and policy).
+n_ppo_epochs: 2         # For how many epochs to update the PPO networks (both value and policy).
 ppo_batch_size: 32      # Indicates how many batches will be used per update. The number of batches is equal to n_steps / batch_size.
 ppo_delta: 0.05         # Decides the amount of clipping, indicating the (KL) trust region for the policy.
 ppo_alpha: 5            # Decides the force of the rollback.
