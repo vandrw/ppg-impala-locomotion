@@ -22,6 +22,8 @@ class Policy_Model(nn.Module):
                 nn.ReLU()
               ).float().to(self.device)
 
+        # The muscle activations in OpenSim are constrained to [0, 1]
+        # Therefore, we use a Sigmoid function as the output.
         self.actor_layer = nn.Sequential(
                 nn.Linear(128, action_dim),
                 nn.Sigmoid()
@@ -342,7 +344,9 @@ class Learner:
         self.n_aux_epochs = aux_epochs
         self.is_training_mode = is_training_mode
         self.action_dim = action_dim
-        self.std = torch.ones([1, action_dim]).float().to(device) * 0.5
+
+        # TODO: Implement exponential decay for the variance
+        self.std = torch.ones([1, action_dim]).float().to(device) * 0.25
 
         self.policy = Policy_Model(state_dim, action_dim)
         self.policy_old = Policy_Model(state_dim, action_dim)

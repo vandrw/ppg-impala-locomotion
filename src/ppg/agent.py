@@ -11,7 +11,7 @@ class Agent:
         self.memory = PolicyMemory()
         self.distributions = Continous(self.device)
         self.policy = Policy_Model(state_dim, action_dim, self.device)
-        self.std = torch.ones([1, action_dim]).float().to(self.device)
+        self.std = torch.ones([1, action_dim]).float().to(self.device) * 0.25
 
         if is_training_mode:
             self.policy.train()
