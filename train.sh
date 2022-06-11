@@ -1,6 +1,6 @@
 #!/bin/bash
 #SBATCH --job-name=myleg_ppg_mpi
-#SBATCH --time=3-00:00
+#SBATCH --time=2-23:59
 #SBATCH --output=output/mpi_%j.out
 #SBATCH --ntasks=51
 #SBATCH --mail-type=ALL

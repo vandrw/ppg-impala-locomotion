@@ -47,6 +47,10 @@ class Agent:
         self.policy.load_state_dict(weights)
 
     def load_weights(self, path):
-        self.policy.load_state_dict(
-            torch.load(Path(path) / "agent.pth", map_location=self.device)
-        )
+        try:
+            self.policy.load_state_dict(
+                torch.load(Path(path) / "agent.pth", map_location=self.device)
+            )
+        except RuntimeError:
+            print("[WARN] Failed loading weights. Retrying...")
+            self.load_weights(path)
