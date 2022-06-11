@@ -27,6 +27,7 @@ def main_worker(args):
     runner = RunnerMPI(
         args.env,
         args.data,
+        args.initial_logstd,
         args.train_mode,
         args.visualize,
         args.n_steps,
@@ -89,6 +90,7 @@ def main_head(args):
         args.gamma,
         args.lambd,
         args.learning_rate,
+        args.initial_logstd
     )
 
     start = time.time()
@@ -108,8 +110,8 @@ def main_head(args):
             data = comm.recv()
             trajectory, done_info = data
 
-            states, actions, action_means, rewards, dones, next_states = trajectory
-            learner.save_all(states, actions, action_means, rewards, dones, next_states)
+            states, actions, action_means, action_std, rewards, dones, next_states = trajectory
+            learner.save_all(states, actions, action_means, action_std, rewards, dones, next_states)
 
             learner.update_ppo()
             if epoch % args.n_aux_update == 0:
@@ -147,9 +149,9 @@ def main_head(args):
                 avg_reward = 0
                 avg_ep_time = 0
 
-    except Exception as ex:
+    except Exception:
         print("Main terminated")
-        traceback.print_exception(type(ex), ex, ex.__traceback__)
+        print(traceback.format_exc())
     finally:
         logging.warning("Training has been stopped.")
         if wandb_run:

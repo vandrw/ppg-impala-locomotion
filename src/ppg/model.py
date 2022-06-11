@@ -11,7 +11,7 @@ device = torch.device("cuda:0" if torch.cuda.is_available() else "cpu")
 dataType = torch.cuda.FloatTensor if torch.cuda.is_available() else torch.FloatTensor
 
 class Policy_Model(nn.Module):
-    def __init__(self, state_dim, action_dim, myDevice=None):
+    def __init__(self, state_dim, action_dim, initial_logstd, myDevice=None):
         super(Policy_Model, self).__init__()
 
         self.device = myDevice if myDevice != None else device
@@ -24,22 +24,31 @@ class Policy_Model(nn.Module):
 
         # The muscle activations in OpenSim are constrained to [0, 1]
         # Therefore, we use a Sigmoid function as the output.
-        self.actor_layer = nn.Sequential(
+        self.actor_mean = nn.Sequential(
                 nn.Linear(128, action_dim),
                 nn.Sigmoid()
               ).float().to(self.device)
 
+        self.actor_logstd = nn.parameter.Parameter(
+            torch.ones([1, action_dim]) * initial_logstd
+            ).float().to(self.device)
+            
         self.critic_layer = nn.Sequential(
                 nn.Linear(128, 1)
               ).float().to(self.device)
 
     def forward(self, states):
+        # Get action and value
         x = self.nn_layer(states)
-        return self.actor_layer(x), self.critic_layer(x)
+        action_mean = self.actor_mean(x)
+        action_logstd = self.actor_logstd.expand_as(action_mean)
+        action_std = torch.exp(action_logstd)
+
+        return action_mean, action_std, self.critic_layer(x)
 
 
 class Value_Model(nn.Module):
-    def __init__(self, state_dim, action_dim, myDevice=None):
+    def __init__(self, state_dim, myDevice=None):
         super(Value_Model, self).__init__()
 
         self.device = myDevice if myDevice != None else device
@@ -52,6 +61,7 @@ class Value_Model(nn.Module):
               ).float().to(self.device)
 
     def forward(self, states):
+        # Get value only
         return self.nn_layer(states)
 
 
@@ -60,6 +70,7 @@ class PolicyMemory(Dataset):
         self.states = []
         self.actions = []
         self.action_means = []
+        self.action_std = []
         self.rewards = []
         self.dones = []
         self.next_states = []
@@ -72,6 +83,7 @@ class PolicyMemory(Dataset):
             np.array(self.states[idx], dtype=np.float32),
             np.array(self.actions[idx], dtype=np.float32),
             np.array(self.action_means[idx], dtype=np.float32),
+            np.array(self.action_std, dtype=np.float32),
             np.array([self.rewards[idx]], dtype=np.float32),
             np.array([self.dones[idx]], dtype=np.float32),
             np.array(self.next_states[idx], dtype=np.float32),
@@ -82,6 +94,7 @@ class PolicyMemory(Dataset):
             self.states,
             self.actions,
             self.action_means,
+            self.action_std,
             self.rewards,
             self.dones,
             self.next_states,
@@ -95,14 +108,6 @@ class PolicyMemory(Dataset):
         self.dones = dones
         self.next_states = next_states
 
-    def save_list(self, states, actions, action_means, rewards, dones, next_states):
-        self.states += states
-        self.actions += actions
-        self.action_means += action_means
-        self.rewards += rewards
-        self.dones += dones
-        self.next_states += next_states
-
     def save_eps(self, state, action, action_mean, reward, done, next_state):
         self.states.append(state)
         self.actions.append(action)
@@ -111,10 +116,14 @@ class PolicyMemory(Dataset):
         self.dones.append(done)
         self.next_states.append(next_state)
 
+    def update_std(self, action_std):
+        self.action_std = action_std
+
     def clear_memory(self):
         del self.states[:]
         del self.actions[:]
         del self.action_means[:]
+        del self.action_std
         del self.rewards[:]
         del self.dones[:]
         del self.next_states[:]
@@ -332,6 +341,7 @@ class Learner:
         gamma,
         lam,
         learning_rate,
+        initial_logstd
     ):
         self.policy_kl_range = policy_kl_range
         self.policy_params = policy_params
@@ -345,15 +355,12 @@ class Learner:
         self.is_training_mode = is_training_mode
         self.action_dim = action_dim
 
-        # TODO: Implement exponential decay for the variance
-        self.std = torch.ones([1, action_dim]).float().to(device) * 0.25
-
-        self.policy = Policy_Model(state_dim, action_dim)
-        self.policy_old = Policy_Model(state_dim, action_dim)
+        self.policy = Policy_Model(state_dim, action_dim, initial_logstd)
+        self.policy_old = Policy_Model(state_dim, action_dim, initial_logstd)
         self.policy_optimizer = Adam(self.policy.parameters(), lr=learning_rate)
 
-        self.value = Value_Model(state_dim, action_dim)
-        self.value_old = Value_Model(state_dim, action_dim)
+        self.value = Value_Model(state_dim)
+        self.value_old = Value_Model(state_dim)
         self.value_optimizer = Adam(self.value.parameters(), lr=learning_rate)
 
         self.policy_memory = PolicyMemory()
@@ -379,31 +386,27 @@ class Learner:
             self.policy.eval()
             self.value.eval()
 
-    def save_all(self, states, actions, action_means, rewards, dones, next_states):
+    def save_all(self, states, actions, action_means, action_std, rewards, dones, next_states):
         self.policy_memory.save_all(
             states, actions, action_means, rewards, dones, next_states
         )
-
-    def save_list(self, states, actions, action_means, rewards, dones, next_states):
-        self.policy_memory.save_list(
-            states, actions, action_means, rewards, dones, next_states
-        )
+        self.policy_memory.update_std(action_std)
 
     # Get loss and Do backpropagation
     def training_ppo(
-        self, states, actions, worker_action_means, rewards, dones, next_states
+        self, states, actions, worker_action_means, worker_std, rewards, dones, next_states
     ):
-        action_mean, _ = self.policy(states)
+        action_mean, action_std, _ = self.policy(states)
         values = self.value(states)
-        old_action_mean, _ = self.policy_old(states)
+        old_action_mean, old_action_std, _ = self.policy_old(states)
         old_values = self.value_old(states)
         next_values = self.value(next_states)
 
         loss = self.policy_loss.compute_loss(
             action_mean,
-            self.std,
+            action_std,
             old_action_mean,
-            self.std,
+            old_action_std,
             values,
             old_values,
             next_values,
@@ -411,7 +414,7 @@ class Learner:
             rewards,
             dones,
             worker_action_means,
-            self.std,
+            worker_std,
         )
 
         self.policy_optimizer.zero_grad()
@@ -425,11 +428,11 @@ class Learner:
     def training_aux(self, states):
         Returns = self.value(states).detach()
 
-        action_mean, values = self.policy(states)
-        old_action_mean, _ = self.policy_old(states)
+        action_mean, action_std, values = self.policy(states)
+        old_action_mean, old_action_std, _ = self.policy_old(states)
 
         joint_loss = self.aux_loss.compute_loss(
-            action_mean, self.std, old_action_mean, self.std, values, Returns
+            action_mean, action_std, old_action_mean, old_action_std, values, Returns
         )
 
         self.policy_optimizer.zero_grad()
@@ -446,6 +449,7 @@ class Learner:
                 states,
                 actions,
                 action_means,
+                action_std,
                 rewards,
                 dones,
                 next_states,
@@ -454,13 +458,14 @@ class Learner:
                     states.float().to(device),
                     actions.float().to(device),
                     action_means.float().to(device),
+                    action_std.float().to(device),
                     rewards.float().to(device),
                     dones.float().to(device),
                     next_states.float().to(device),
                 )
 
         # Clear the memory
-        states, _, _, _, _, _ = self.policy_memory.get_all()
+        states, _, _, _, _, _, _ = self.policy_memory.get_all()
         self.aux_memory.save_all(states)
         self.policy_memory.clear_memory()
 

@@ -16,6 +16,7 @@ n_ppo_epochs: 2         # For how many epochs to update the PPO networks (both v
 ppo_batch_size: 32      # Indicates how many batches will be used per update. The number of batches is equal to n_steps / batch_size.
 ppo_delta: 0.05         # Decides the amount of clipping, indicating the (KL) trust region for the policy.
 ppo_alpha: 5            # Decides the force of the rollback.
+initial_logstd: -1.34   # Decides the initial value of the log variance of the policy distribution.
 
 # Critic (PPO)
 value_clip: 1.0         # How much the critic values will be clipped, resulting in predicted values in the interval [-value_clip, value_clip].

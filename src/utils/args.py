@@ -167,6 +167,13 @@ def get_args():
         default=2.5e-4,
         help="Indicates the step-size taken during gradient descent.",
     )
+    parser.add_argument(
+        "--initial_logstd",
+        type=float,
+        default=-1.34,
+        help="Decides the initial value of the log variance of the policy distribution.",
+    )
+    
 
     args = _parse_args(parser, config_parser)
 
