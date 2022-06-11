@@ -1,7 +1,8 @@
 import torch
 from pathlib import Path
-
-from src.ppg.model import Policy_Model, PolicyMemory, Continous
+from src.ppg.distribution import Continous
+from src.ppg.memory import PolicyMemory
+from src.ppg.model import Policy_Model
 
 
 class Agent:
@@ -34,7 +35,7 @@ class Agent:
             # Sample the action
             action = self.distributions.sample(action_mean, action_std)
         else:
-            return action_mean.squeeze(0).detach().numpy(), None
+            return action_mean.squeeze(0).detach().numpy(), None, None
 
         return (
             action.squeeze(0).cpu().numpy(),

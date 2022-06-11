@@ -1,4 +1,4 @@
-from src.ppg.runner import RunnerMPI
+from src.ppg.runner import Runner
 import argparse
 
 def main(args):
@@ -8,10 +8,11 @@ def main(args):
         )
     )
 
-    runner = RunnerMPI(
+    runner = Runner(
         args.env,
         args.data,
-        False,
+        -1.34,
+        True,
         True,
         1000,
         0,

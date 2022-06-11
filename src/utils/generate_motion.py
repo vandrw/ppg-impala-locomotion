@@ -17,7 +17,7 @@ class Runner:
         self.state_dim = self.env.observation_space.shape[0]
         self.action_dim = self.env.action_space.shape[0]
 
-        self.agent = Agent(self.state_dim, self.action_dim, True)
+        self.agent = Agent(self.state_dim, self.action_dim, -1.34, True)
 
         self.max_action = 1.0
 
@@ -35,7 +35,7 @@ class Runner:
             pose_info = pd.DataFrame()
             for frame in infinite_range(0):
                 curr_pose = {}
-                action, _ = self.agent.act(self.states)
+                action, _, _ = self.agent.act(self.states)
 
                 action_gym = np.clip(action, -1.0, 1.0) * self.max_action
                 next_state, reward, done, info = self.env.step(action_gym)

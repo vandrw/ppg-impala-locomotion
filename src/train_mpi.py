@@ -19,12 +19,12 @@ from src.utils.args import get_args
 
 
 def main_worker(args):
-    from src.ppg.runner import RunnerMPI
+    from src.ppg.runner import Runner
 
     msg = None
     output_path = comm.bcast(msg, root=0)
 
-    runner = RunnerMPI(
+    runner = Runner(
         args.env,
         args.data,
         args.initial_logstd,
@@ -54,7 +54,7 @@ def main_worker(args):
 
 
 def main_head(args):
-    from src.ppg.model import Learner
+    from src.ppg.learner import Learner
 
     from src.ppg.logging import EpochInfo, init_logging
     from dataclasses import asdict
