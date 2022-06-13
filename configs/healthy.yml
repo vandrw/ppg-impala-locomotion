@@ -1,22 +1,35 @@
-env: "healthy"          # Which model to import ("healthy" or "prosthesis").
+# OpenSim
+env: "healthy"          # Which model to import ("healthy" or "healthy_terrain").      
 data: "AB06"            # What dataset to use ("AB06" or "AB23").
 
-train_mode: True        # If you want to train the agent, set this to True. If false, no changes will be made to the model.
+# Logging
 visualize: False        # If you want to display the image, set this to True. Turn this off if you run this on Peregrine/Google Collab.
-log_wandb: False         # Enables logging in wandb.
+log_wandb: True         # Enables logging in wandb.
 
-n_update: 2000          # How many episodes before the Policy is updated (per worker). Also regarded as the simulation budget (steps) per iteration.
-n_aux_update: 7         # How many episodes before the Auxiliary is updated.
-num_workers: 50         # How many agents you want to run asynchronously in Ray. If using the mpi implementation, simply provide the argument '-n 50' after 'mpirun' to train with 50 workers.
+# Worker
+train_mode: True        # If you want to train the agent, set this to True. If false, no changes will be made to the model.
+num_workers: 50         # How many agents you want to run asynchronously in Ray. If using the mpi implementation, simply provide the argument '-n X' after 'mpirun' to train with X workers.
+n_steps: 2048           # How many steps to perform in the environment before the networks are updated (per worker).
 
-policy_kl_range: 0.045  # Recommended to set it to 0.03 for Continuous action spaces.
-policy_params: 5        # Recommended set to 5 for Continuous
-value_clip: 1.2         # How much the values will be clipped. Recommended set to the highest or lowest possible reward
+# TrulyPPO
+n_ppo_epochs: 5         # For how many epochs to update the PPO networks (both value and policy).
+ppo_batch_size: 32      # Indicates how many batches will be used per update. The number of batches is equal to n_steps / batch_size.
+ppo_delta: 0.05         # Decides the amount of clipping, indicating the (KL) trust region for the policy.
+ppo_alpha: 5            # Decides the force of the rollback.
+initial_logstd: -1.34   # Decides the initial value of the log variance of the policy distribution.
+
+# Critic (PPO)
+value_clip: 1.0         # How much the critic values will be clipped, resulting in predicted values in the interval [-value_clip, value_clip].
 entropy_coef: 0.0       # How much action randomness is introduced. Because we use Standard Deviation for Continuous, no need to use Entropy for randomness.
-vf_loss_coef: 1.05      # Just set to 1.
-batch_size: 32          # How many batches per update. size of batch = n_update / batch_size. Recommended to set it to 32 for Continuous.
-PPO_epochs: 15          # How many epochs per update. Recommended to set it to 10 for Continuous.    
+vf_loss_coef: 1.0       # Value function coefficient. Indicates how much the critic loss is taken into account.
 
-gamma: 0.99             # Just set to 0.99
-lam: 0.95               # Just set to 0.95
-learning_rate: 2.5e-4   # Just set to 0.00025
+# Auxiliary
+n_aux_update: 16        # After how many sets of trajectories the Auxiliary is updated.
+n_aux_epochs: 10         # For how many epochs to train the Auxiliary policy.
+aux_batch_size: 64      # The size of each minibatches, per auxiliary epoch. 
+beta_clone: 1.0         # Controls the trade-off between the old and new Auxiliary policy.
+
+# Optimization
+gamma: 0.99             # Discount factor. Reduces the value of future states. 
+lambd: 0.95             # GAE parameter used to reduce variance during training.
+learning_rate: 2.5e-4   # Indicates the step-size taken during gradient descent.
