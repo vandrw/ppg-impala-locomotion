@@ -186,9 +186,4 @@ class Learner:
         self.policy_old.load_state_dict(self.policy.state_dict())
 
     def save_weights(self, path):
-        try:
-            torch.save(self.policy.state_dict(), Path(path) / "agent.pth")
-        except RuntimeError:
-            print("[WARN] Failed saving weights! Retrying...")
-            self.save_weights(path)
-        
+        torch.save(self.policy.state_dict(), Path(path) / "agent.pth")
