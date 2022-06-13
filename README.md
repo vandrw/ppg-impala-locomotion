@@ -27,7 +27,7 @@ For non-Ubuntu distributions, you will have to find a way to build OpenSim-core.
 
 After activating the virtual environment, install additional dependencies. Run the following in a local library folder:
 ```
-pip install python-dateutil pytz ray==1.12.0
+pip install python-dateutil pytz wandb gym==0.24.0
 
 git clone https://github.com/rug-my-leg/opensim-env.git
 cd opensim-env/
@@ -45,11 +45,6 @@ export LD_LIBRARY_PATH=$CONDA_PREFIX/lib:$CONDA_PREFIX/adol-c/lib64/:$CONDA_PREF
 ```
 # For environments built from source. Make sure you replace /home/$USER with the correct path to the libraries.
 export LD_LIBRARY_PATH=/home/$USER/.libs/opensim_dependencies/ipopt/lib:/home/$USER/.libs/opensim_dependencies/adol-c/lib64:$LD_LIBRARY_PATH
-```
-
-To run a training process with Ray, run the following:
-```
-python -m src.train_ppg_impala -c configs/healthy.yml
 ```
 
 To use MPI, run the following:
@@ -101,16 +96,18 @@ python -m src.utils.playback output/example_run_name/episode.csv --speed 0.2
 ```
 
 # Building OpenSim from source on Peregrine
-If you already have access to the Peregrine cluster, you can run the commands below on one of the nodes to have access to the latest OpenSim version.
+If you already have access to the Peregrine cluster, you can run the commands below on one of the nodes to have access to the latest OpenSim version. Try to perform them one by one, rather than running the following as a script.
 
 ```
 module load PyTorch/1.10.0-fosscuda-2020b CMake/3.20.1-GCCcore-10.2.0 Eigen/3.3.8-GCCcore-10.2.0 SWIG/4.0.2-GCCcore-10.2.0 OpenBLAS/0.3.12-GCC-10.2.0
 
-mkdir /data/$USER/.libs
-mkdir/data/$USER/.envs
+mkdir /home/$USER/.libs
+mkdir/home/$USER/.envs
 
-python -m venv /data/$USER/.envs/osim
-source /data/$USER/.envs/osim/bin/activate
+python -m venv /home/$USER/.envs/osim
+source /home/$USER/.envs/osim/bin/activate
+pip install --upgrade pip
+pip install --upgrade wheel
 
 mkdir software
 mkdir software/opensim
@@ -122,7 +119,7 @@ mkdir build_deps/
 cd build_deps/
 
 cmake ../opensim-core/dependencies/ -LAH \
-      -DCMAKE_INSTALL_PREFIX=/data/$USER/.libs/opensim_dependencies \
+      -DCMAKE_INSTALL_PREFIX=/home/$USER/.libs/opensim_dependencies \
       -DCMAKE_BUILD_TYPE=Release \
       -DSUPERBUILD_ezc3d=ON \
       -DOPENSIM_WITH_TROPTER=ON \
@@ -134,12 +131,12 @@ cd ..
 mkdir build/
 cd build/
 
-export docopt_DIR=/data/$USER/.libs/opensim_dependencies/docopt/lib64/cmake
+export docopt_DIR=/home/$USER/.libs/opensim_dependencies/docopt/lib64/cmake
 
 cmake ../opensim-core -LAH \
-      -DCMAKE_INSTALL_PREFIX=/data/$USER/.libs/opensim-core \
+      -DCMAKE_INSTALL_PREFIX=/home/$USER/.libs/opensim-core \
       -DCMAKE_BUILD_TYPE=Release \
-      -DOPENSIM_DEPENDENCIES_DIR=/data/$USER/.libs/opensim_dependencies \
+      -DOPENSIM_DEPENDENCIES_DIR=/home/$USER/.libs/opensim_dependencies \
       -DOPENSIM_C3D_PARSER=ezc3d \
       -DBUILD_PYTHON_WRAPPING=ON \
       -DSWIG_DIR=/software/software/SWIG/4.0.2-GCCcore-10.2.0/share/swig \
@@ -151,13 +148,17 @@ cmake ../opensim-core -LAH \
 
 make -j8
 
-export LD_LIBRARY_PATH=$LD_LIBRARY_PATH:/data/$USER/.libs/opensim_dependencies/simbody/lib
+# Ignore the python_example failure
+export LD_LIBRARY_PATH=$LD_LIBRARY_PATH:/home/$USER/.libs/opensim_dependencies/simbody/lib
 ctest --parallel 8 --output-on-failure
 
+# Ignore issues with doxygen
 make -j8 install
 
-export LD_LIBRARY_PATH=/data/$USER/.libs/opensim_dependencies/ipopt/lib:/data/$USER/.libs/opensim_dependencies/adol-c/lib64:$LD_LIBRARY_PATH
+export LD_LIBRARY_PATH=/home/$USER/.libs/opensim_dependencies/ipopt/lib:/home/$USER/.libs/opensim_dependencies/adol-c/lib64:$LD_LIBRARY_PATH
 
-cd /data/$USER/.libs/opensim-core/sdk/Python/
+cd /home/$USER/.libs/opensim-core/sdk/Python/
 pip install .
 ```
+
+You can now continue installing the other dependencies mentioned above.

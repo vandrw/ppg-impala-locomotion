@@ -93,6 +93,8 @@ def main_head(args):
         args.initial_logstd
     )
 
+    del env
+
     start = time.time()
     if not continue_run:
         learner.save_weights(output_path)
