@@ -13,7 +13,7 @@ import traceback
 
 from src.utils.args import get_args
 
-SWEEP_TIME = 50
+SWEEP_TIME = 30
 
 def main_worker(args):
     from src.ppg.runner import Runner
