@@ -28,7 +28,7 @@ def main(args):
         output_path = init_output(Path("sweep") / run_name)
         dict_config["run_name"] = str(Path("sweep") / run_name)
 
-        print("Created config in {}...".format(dict_config))
+        print("Created config in {}...".format(dict_config["run_name"]))
         with open(output_path / "config.yaml", "w") as f:
             yaml.safe_dump(dict_config, stream=f, default_flow_style=False)
 
