@@ -33,7 +33,7 @@ def main(args):
             f.write(str(output_path / "config.yaml") + '\n')
 
 if __name__ == "__main__":
-    parser = argparse.ArgumentParser(description="Hyperparameter Serach Initializer", help=True)
+    parser = argparse.ArgumentParser(description="Hyperparameter Serach Initializer")
 
     parser.add_argument(
         "--id",
