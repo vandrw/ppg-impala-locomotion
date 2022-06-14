@@ -43,8 +43,8 @@ parameters:
   # Critic (PPO)
   value_clip:
     distribution: uniform
-    min: 0.5
-    max: 2.0
+    min: 0.3
+    max: 1.0
   entropy_coef:
     distribution: uniform
     min: 0.0
