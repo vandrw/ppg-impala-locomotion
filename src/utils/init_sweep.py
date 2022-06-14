@@ -4,30 +4,49 @@ import yaml
 import wandb
 import time
 import numpy
+import argparse
 
-SWEEP_ID = "" # Add your wandb sweep id here (i.e., user/project/sweep_id). 
-SWEEP_RUNS = 25
 
-sweep_path = init_output("sweep")
-sweep = wandb.controller(SWEEP_ID)
 
-for run in range(SWEEP_RUNS):
-    params = sweep.search()
-    config = params.config
-    dict_config = {}
-    for key in config:
-        if type(config[key]["value"]) == numpy.float64:
-            dict_config[key] = float(config[key]["value"])
-        else:
-            dict_config[key] = config[key]["value"]
-    
-    run_name = "{}_{}".format(time.strftime("%Y%m%d%H%M%S"), run)
-    output_path = init_output(Path("sweep") / run_name)
-    dict_config["run_name"] = str(Path("sweep") / run_name)
+def main(args):
+    sweep_path = init_output("sweep")
+    sweep = wandb.controller(args.id)
 
-    with open(output_path / "config.yaml", "w") as f:
-        yaml.safe_dump(dict_config, stream=f, default_flow_style=False)
+    for run in range(args.runs):
+        params = sweep.search()
+        config = params.config
+        dict_config = {}
+        for key in config:
+            if type(config[key]["value"]) == numpy.float64:
+                dict_config[key] = float(config[key]["value"])
+            else:
+                dict_config[key] = config[key]["value"]
+        
+        run_name = "{}_{}".format(time.strftime("%Y%m%d%H%M%S"), run)
+        output_path = init_output(Path("sweep") / run_name)
+        dict_config["run_name"] = str(Path("sweep") / run_name)
 
-    with open(sweep_path / "sweeps.info", "a") as f:
-        f.write(str(output_path / "config.yaml") + '\n')
+        with open(output_path / "config.yaml", "w") as f:
+            yaml.safe_dump(dict_config, stream=f, default_flow_style=False)
+
+        with open(sweep_path / "sweeps.info", "a") as f:
+            f.write(str(output_path / "config.yaml") + '\n')
+
+if __name__ == "__main__":
+    parser = argparse.ArgumentParser(description="Hyperparameter Serach Initializer", help=True)
+
+    parser.add_argument(
+        "--id",
+        type=str,
+        help="The sweep id provided by wandb: <user>/<project>/<sweep id>"
+    )
+    parser.add_argument(
+        "--runs",
+        type=int,
+        default=10,
+        help="The number of sweep configurations you want to create."
+    )
+
+    args = parser.parse_args()
+    main(args)
     

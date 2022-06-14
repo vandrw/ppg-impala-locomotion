@@ -58,10 +58,10 @@ If you encounter issues when running the MPI version, try changing `start_method
 ## Hyperparameter Search
 To find a good set of hyperparameters for the model, `src/sweep_mpi.py` makes use of the `wandb` sweep function. Currently this is only implemented for the MPI version.
 
-To begin a hyperparameter sweep, first initialize the configurations using the command below. This will create a number of new folders under `output/sweep` that contain a config file, as well as a `sweeps.info` file that contains the path of these configs. Before running it, make sure you create a sweep in your project on wandb and copy the given ID in the `SWEEP_ID` constant inside the `src/utils/init_sweep.py` script. You can also adjust the number of generated configurations by changing the `SWEEP_RUNS` constant.
+To begin a hyperparameter sweep, first initialize the configurations using the command below. This will create a number of new folders under `output/sweep` that contain a config file, as well as a `sweeps.info` file that contains the path of these configs. Before running it, make sure you create a sweep in your project on wandb and provide the given ID to the `src/utils/init_sweep.py` script. You can also adjust the number of generated configurations by providing the `runs` parameter.
 ```
 wandb init
-python -m src.utils.init_sweep
+python -m src.utils.init_sweep --id <SWEEP_ID> --runs 25
 ```
 
 Finally, to train all the models, one can use the script mentioned below. If you're running the project on Peregrine, simply submit `run_sweep.sh` to the job handler.

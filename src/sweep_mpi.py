@@ -12,7 +12,6 @@ import time
 import traceback
 
 from src.utils.args import get_args
-from math import ceil
 
 SWEEP_TIME = 50
 
