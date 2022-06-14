@@ -56,7 +56,7 @@ def main_worker(args):
 def main_head(args):
     from src.ppg.learner import Learner
 
-    from src.ppg.logging import EpochInfo, init_logging
+    from src.utils.logging import EpochInfo, init_logging
     from dataclasses import asdict
 
     from pathlib import Path

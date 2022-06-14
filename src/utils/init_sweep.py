@@ -1,4 +1,4 @@
-from src.ppg.logging import init_output
+from src.utils.logging import init_output
 from pathlib import Path
 import yaml
 import wandb

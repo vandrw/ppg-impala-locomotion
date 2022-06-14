@@ -60,6 +60,7 @@ To find a good set of hyperparameters for the model, `src/sweep_mpi.py` makes us
 
 To begin a hyperparameter sweep, first initialize the configurations using the command below. This will create a number of new folders under `output/sweep` that contain a config file, as well as a `sweeps.info` file that contains the path of these configs. Before running it, make sure you create a sweep in your project on wandb and copy the given ID in the `SWEEP_ID` constant inside the `src/utils/init_sweep.py` script. You can also adjust the number of generated configurations by changing the `SWEEP_RUNS` constant.
 ```
+wandb init
 python -m src.utils.init_sweep
 ```
 

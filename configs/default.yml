@@ -15,12 +15,12 @@ n_steps: 1024           # How many steps to perform in the environment before th
 n_ppo_epochs: 2         # For how many epochs to update the PPO networks (both value and policy).
 ppo_batch_size: 32      # Indicates how many batches will be used per update. The number of batches is equal to n_steps / batch_size.
 ppo_delta: 0.05         # Decides the amount of clipping, indicating the (KL) trust region for the policy.
-ppo_alpha: 5            # Decides the force of the rollback.
+ppo_alpha: 5.0          # Decides the force of the rollback.
 initial_logstd: -1.34   # Decides the initial value of the log variance of the policy distribution.
 
 # Critic (PPO)
 value_clip: 1.0         # How much the critic values will be clipped, resulting in predicted values in the interval [-value_clip, value_clip].
-entropy_coef: 0.0       # How much action randomness is introduced. Because we use Standard Deviation for Continuous, no need to use Entropy for randomness.
+entropy_coef: 0.0       # How much action randomness is introduced.
 vf_loss_coef: 1.0       # Value function coefficient. Indicates how much the critic loss is taken into account.
 
 # Auxiliary

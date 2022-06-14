@@ -99,7 +99,10 @@ def get_args():
         help="Decides the amount of clipping, indicating the (KL) trust region for the policy.",
     )
     parser.add_argument(
-        "--ppo_alpha", type=int, default=5, help="Decides the force of the rollback."
+        "--ppo_alpha",
+        type=float,
+        default=5.0,
+        help="Decides the force of the rollback.",
     )
 
     # Critic (PPO)
@@ -173,7 +176,6 @@ def get_args():
         default=-1.34,
         help="Decides the initial value of the log variance of the policy distribution.",
     )
-    
 
     args = _parse_args(parser, config_parser)
 

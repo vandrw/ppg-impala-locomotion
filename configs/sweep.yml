@@ -1,64 +1,75 @@
 method: bayes
 metric:
-  name: info.total_reward
+  name: avg_reward
   goal: maximize
 parameters:
+
+  # OpenSim
   env:
     value: healthy
-  train_mode: 
-    value: True
+  data:
+    value: AB06
+
+  # Logging
   visualize: 
     value: False
   log_wandb:
     value: True
-  PPO_epochs:
-    distribution: int_uniform
-    min: 5
-    max: 20
-  n_update:
-    distribution: int_uniform
-    min: 1000
-    max: 10000
-  n_aux_update:
-    distribution: int_uniform
-    min: 2
-    max: 20
-  batch_size:
-    distribution: int_uniform
-    min: 16
-    max: 64
-  policy_params:
-    distribution: int_uniform
-    min: 2
-    max: 10
-  lam:
+
+  # Worker
+  train_mode: 
+    value: True
+  n_steps:
+    values: [1024, 2048, 4096]
+
+  # TrulyPPO
+  n_ppo_epochs:
+    values: [2, 4, 8, 16]
+  ppo_batch_size:
+    values: [16, 32, 48, 64]
+  ppo_delta:
     distribution: uniform
-    min: 0.3
-    max: 0.99
-  gamma:
+    min: 0.01
+    max: 0.08
+  ppo_alpha:
     distribution: uniform
-    min: 0.3
-    max: 0.99
+    min: 1.0
+    max: 10.0
+  initial_logstd:
+    distribution: uniform
+    min: -3
+    max: 0
+
+  # Critic (PPO)
   value_clip:
     distribution: uniform
     min: 0.5
     max: 2.0
-  vf_loss_coef:
-    distribution: uniform
-    min: 0.5
-    max: 2.0
-  learning_rate:
-    distribution: uniform
-    min: 0.000125
-    max: 0.001
-  policy_kl_range:
-    distribution: uniform
-    min: 0.01
-    max: 0.06
   entropy_coef:
     distribution: uniform
     min: 0.0
     max: 0.2
+  vf_loss_coef:
+    distribution: uniform
+    min: 0.5
+    max: 2.0
+
+  # Auxiliary
+  n_aux_update:
+    values: [4, 8, 16, 32]
+  n_aux_epochs:
+    values: [2, 4, 8, 16]
+
+  # Optimization
+  lam:
+    values: [0.99, 0.999]
+  gamma:
+    value: 0.99
+  learning_rate:
+    distribution: uniform
+    min: 0.000125
+    max: 0.001
+
 controller:
   type: local
 # program: src.sweep_mpi    
