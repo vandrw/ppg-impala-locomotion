@@ -12,6 +12,8 @@ def main(args):
     sweep_path = init_output("sweep")
     sweep = wandb.controller(args.id)
 
+    print("Creating configs for sweep {}.".format(args.id))
+
     for run in range(args.runs):
         params = sweep.search()
         config = params.config
@@ -26,11 +28,14 @@ def main(args):
         output_path = init_output(Path("sweep") / run_name)
         dict_config["run_name"] = str(Path("sweep") / run_name)
 
+        print("Created config in {}...".format(dict_config))
         with open(output_path / "config.yaml", "w") as f:
             yaml.safe_dump(dict_config, stream=f, default_flow_style=False)
 
         with open(sweep_path / "sweeps.info", "a") as f:
             f.write(str(output_path / "config.yaml") + '\n')
+    
+    print("Finished creating {} configs!".format(args.runs))
 
 if __name__ == "__main__":
     parser = argparse.ArgumentParser(description="Hyperparameter Serach Initializer")

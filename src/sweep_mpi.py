@@ -63,13 +63,6 @@ def main_head(args):
 
     output_path = Path("output") / args.run_name
 
-    wandb_run = wandb.init(
-        project="rug-locomotion-ppg", 
-        config=args, 
-        settings=wandb.Settings(start_method="fork"),
-        group="sweep"
-        )
-
     env_name = make_gym_env(args.env, args.data, visualize=args.visualize)
 
     env = gym.make(env_name)
@@ -109,6 +102,13 @@ def main_head(args):
 
     msg = output_path
     output_path = comm.bcast(msg, root=0)
+
+    wandb_run = wandb.init(
+        project="rug-locomotion-ppg", 
+        config=args, 
+        settings=wandb.Settings(start_method="fork"),
+        group="sweep"
+    )
 
     try:
         avg_reward = 0
