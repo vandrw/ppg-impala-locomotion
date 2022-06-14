@@ -19,7 +19,7 @@ class Runner:
         env_name = make_gym_env(
             experiment_type, data_subject=data_subject, visualize=render
         )
-        self.env = gym.make(env_name)
+        self.env = gym.make(env_name, disable_env_checker=True)
         self.states = self.env.reset()
         self.state_dim = self.env.observation_space.shape[0]
         self.action_dim = self.env.action_space.shape[0]

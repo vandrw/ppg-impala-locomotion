@@ -186,4 +186,12 @@ class Learner:
         self.policy_old.load_state_dict(self.policy.state_dict())
 
     def save_weights(self, path):
-        torch.save(self.policy.state_dict(), Path(path) / "agent.pth")
+        torch.save(self.policy.state_dict(), Path(path) / "agent_policy.pth")
+        torch.save(self.value.state_dict(), Path(path) / "agent_value.pth")
+    def load_weights(self, path):
+        self.policy.load_state_dict(
+            torch.load(Path(path) / "agent_policy.pth", map_location=device)
+        )
+        self.value.load_state_dict(
+            torch.load(Path(path) / "agent_value.pth", map_location=device)
+        )

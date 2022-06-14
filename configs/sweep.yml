@@ -65,7 +65,7 @@ parameters:
     max: 1.5
 
   # Optimization
-  lam:
+  lambd:
     values: [0.99, 0.999]
   gamma:
     value: 0.99

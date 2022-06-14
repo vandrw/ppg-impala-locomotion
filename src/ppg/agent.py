@@ -45,5 +45,5 @@ class Agent:
 
     def load_weights(self, path):
         self.policy.load_state_dict(
-            torch.load(Path(path) / "agent.pth", map_location=self.device)
+            torch.load(Path(path) / "agent_policy.pth", map_location=self.device)
         )

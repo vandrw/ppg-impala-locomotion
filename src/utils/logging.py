@@ -41,7 +41,7 @@ def init_logging(config):
     with open(Path(output_path) / "config.yaml", "w") as f:
         f.write(yaml.safe_dump(config.__dict__, default_flow_style=False))
 
-    continue_run = (Path(output_path) / "agent.pth").exists()
+    continue_run = (Path(output_path) / "agent_policy.pth").exists()
     if continue_run:
         try:
             with open(Path(output_path) / "epoch.info", "r") as ep_file:

@@ -10,16 +10,16 @@ class Policy_Model(nn.Module):
 
         self.device = myDevice if myDevice != None else device
         self.nn_layer = nn.Sequential(
-                nn.Linear(state_dim, 256),
-                nn.ReLU(),
-                nn.Linear(256, 128),
-                nn.ReLU()
+                nn.Linear(state_dim, 512),
+                nn.LeakyReLU(0.01),
+                nn.Linear(512, 256),
+                nn.LeakyReLU(0.01)
               ).float().to(self.device)
 
         # The muscle activations in OpenSim are constrained to [0, 1]
         # Therefore, we use a Sigmoid function as the output.
         self.actor_mean = nn.Sequential(
-                nn.Linear(128, action_dim),
+                nn.Linear(256, action_dim),
                 nn.Sigmoid()
               ).float().to(self.device)
 
@@ -28,7 +28,7 @@ class Policy_Model(nn.Module):
             ).float().to(self.device)
             
         self.critic_layer = nn.Sequential(
-                nn.Linear(128, 1)
+                nn.Linear(256, 1)
               ).float().to(self.device)
 
     def forward(self, states):
@@ -47,11 +47,11 @@ class Value_Model(nn.Module):
 
         self.device = myDevice if myDevice != None else device
         self.nn_layer = nn.Sequential(
-                nn.Linear(state_dim, 128),
-                nn.ReLU(),
-                nn.Linear(128, 64),
-                nn.ReLU(),
-                nn.Linear(64, 1)
+                nn.Linear(state_dim, 256),
+                nn.LeakyReLU(0.01),
+                nn.Linear(256, 128),
+                nn.LeakyReLU(0.01),
+                nn.Linear(128, 1)
               ).float().to(self.device)
 
     def forward(self, states):

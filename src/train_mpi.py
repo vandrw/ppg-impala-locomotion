@@ -69,7 +69,7 @@ def main_head(args):
 
     env_name = make_gym_env(args.env, args.data, visualize=args.visualize)
 
-    env = gym.make(env_name)
+    env = gym.make(env_name, disable_env_checker=True)
     state_dim = env.observation_space.shape[0]
     action_dim = env.action_space.shape[0]
 
@@ -98,6 +98,9 @@ def main_head(args):
     start = time.time()
     if not continue_run:
         learner.save_weights(output_path)
+    else:
+        learner.load_weights(output_path)
+        logging.info("Loaded previous Learner weights!")
 
     msg = output_path
     output_path = comm.bcast(msg, root=0)

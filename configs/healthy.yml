@@ -9,14 +9,14 @@ log_wandb: True         # Enables logging in wandb.
 # Worker
 train_mode: True        # If you want to train the agent, set this to True. If false, no changes will be made to the model.
 num_workers: 50         # How many agents you want to run asynchronously in Ray. If using the mpi implementation, simply provide the argument '-n X' after 'mpirun' to train with X workers.
-n_steps: 2048           # How many steps to perform in the environment before the networks are updated (per worker).
+n_steps: 1024           # How many steps to perform in the environment before the networks are updated (per worker).
 
 # TrulyPPO
-n_ppo_epochs: 5         # For how many epochs to update the PPO networks (both value and policy).
+n_ppo_epochs: 10        # For how many epochs to update the PPO networks (both value and policy).
 ppo_batch_size: 32      # Indicates how many batches will be used per update. The number of batches is equal to n_steps / batch_size.
 ppo_delta: 0.05         # Decides the amount of clipping, indicating the (KL) trust region for the policy.
 ppo_alpha: 5            # Decides the force of the rollback.
-initial_logstd: -1.34   # Decides the initial value of the log variance of the policy distribution.
+initial_logstd: -1      # Decides the initial value of the log variance of the policy distribution.
 
 # Critic (PPO)
 value_clip: 1.0         # How much the critic values will be clipped, resulting in predicted values in the interval [-value_clip, value_clip].
@@ -25,9 +25,9 @@ vf_loss_coef: 1.0       # Value function coefficient. Indicates how much the cri
 
 # Auxiliary
 n_aux_update: 16        # After how many sets of trajectories the Auxiliary is updated.
-n_aux_epochs: 10         # For how many epochs to train the Auxiliary policy.
+n_aux_epochs: 20        # For how many epochs to train the Auxiliary policy.
 aux_batch_size: 64      # The size of each minibatches, per auxiliary epoch. 
-beta_clone: 1.0         # Controls the trade-off between the old and new Auxiliary policy.
+beta_clone: 1.2         # Controls the trade-off between the old and new Auxiliary policy.
 
 # Optimization
 gamma: 0.99             # Discount factor. Reduces the value of future states. 
