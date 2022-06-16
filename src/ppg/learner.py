@@ -144,7 +144,7 @@ class Learner:
         self.normalizer.update(self.policy_memory.states)
         
         self.policy_memory.norm_states(
-            self.normalizer.mean.numpy(), self.normalizer.var.numpy(), 5
+            self.normalizer.mean.numpy(), self.normalizer.var.numpy(), 3
         )
 
         dataloader = DataLoader(self.policy_memory, self.ppo_batchsize, shuffle=False)
@@ -180,8 +180,6 @@ class Learner:
 
     def update_aux(self):
         dataloader = DataLoader(self.aux_memory, self.aux_batchsize, shuffle=False)
-
-        print(self.aux_memory.states)
 
         # Optimize policy for K epochs:
         for _ in range(self.n_aux_epochs):
