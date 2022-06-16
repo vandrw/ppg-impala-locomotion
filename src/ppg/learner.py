@@ -120,6 +120,7 @@ class Learner:
 
         if loss.isnan().any():
             print("loss is nan!")
+            print(loss)
 
         loss.backward()
 

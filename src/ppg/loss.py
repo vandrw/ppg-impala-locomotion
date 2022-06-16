@@ -50,6 +50,16 @@ class TrulyPPO:
             worker_action_means, worker_std, actions
         ).detach()
 
+        if logprobs.isnan().any():
+            print("logprobs are nan!")
+            print(logprobs)
+        if Old_logprobs.isnan().any():
+            print("Old_logprobs are nan!")
+            print(Old_logprobs)
+        if Worker_logprobs.isnan().any():
+            print("logprobs are nan!")
+            print(Worker_logprobs)
+
         # Getting general advantages estimator and returns
         Advantages = self.policy_function.vtrace_generalized_advantage_estimation(
             values, rewards, next_values, dones, logprobs, Worker_logprobs
@@ -59,11 +69,19 @@ class TrulyPPO:
             (Advantages - Advantages.mean()) / (Advantages.std() + 1e-6)
         ).detach()
 
+        if Advantages.isnan().any():
+            print("Advantages are nan!")
+            print(Advantages)
+
         # Finding Surrogate Loss
         ratios = (logprobs - Old_logprobs).exp()  # ratios = old_logprobs / logprobs
         Kl = self.distributions.kl_divergence(
             Old_action_mean, old_action_std, action_mean, action_std
         )
+
+        if Kl.isnan().any():
+            print("Kl is nan!")
+            print(Kl)
 
         pg_targets = torch.where(
             (Kl >= self.policy_kl_range) & (ratios > 1),
@@ -74,6 +92,9 @@ class TrulyPPO:
 
         # Getting entropy from the action probability
         dist_entropy = self.distributions.entropy(action_mean, action_std).mean()
+        if dist_entropy.isnan().any():
+            print("dist_entropy are nan!")
+            print(dist_entropy)
 
         # Getting Critic loss by using Clipped critic value
         if self.value_clip is None:
@@ -85,6 +106,10 @@ class TrulyPPO:
             vf_losses1 = (Returns - values).pow(2) * 0.5  # Mean Squared Error
             vf_losses2 = (Returns - vpredclipped).pow(2) * 0.5  # Mean Squared Error
             critic_loss = torch.max(vf_losses1, vf_losses2).mean()
+        
+        if critic_loss.isnan().any():
+            print("critics_loss are nan!")
+            print(critic_loss)
 
         # We need to maximaze Policy Loss to make agent always find Better Rewards
         # and minimize Critic Loss
