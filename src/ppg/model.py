@@ -4,9 +4,9 @@ import torch.nn as nn
 device = torch.device("cuda:0" if torch.cuda.is_available() else "cpu")
 dataType = torch.cuda.FloatTensor if torch.cuda.is_available() else torch.FloatTensor
 
-class Policy_Model(nn.Module):
+class PolicyModel(nn.Module):
     def __init__(self, state_dim, action_dim, initial_logstd, myDevice=None):
-        super(Policy_Model, self).__init__()
+        super(PolicyModel, self).__init__()
 
         self.device = myDevice if myDevice != None else device
         self.nn_layer = nn.Sequential(
@@ -41,9 +41,9 @@ class Policy_Model(nn.Module):
         return action_mean, action_std, self.critic_layer(x)
 
 
-class Value_Model(nn.Module):
+class ValueModel(nn.Module):
     def __init__(self, state_dim, myDevice=None):
-        super(Value_Model, self).__init__()
+        super(ValueModel, self).__init__()
 
         self.device = myDevice if myDevice != None else device
         self.nn_layer = nn.Sequential(

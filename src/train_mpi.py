@@ -98,9 +98,12 @@ def main_head(args):
     start = time.time()
     if not continue_run:
         learner.save_weights(output_path)
+        learner.save_normalizer(output_path)
     else:
         learner.load_weights(output_path)
         logging.info("Loaded previous Learner weights!")
+        learner.load_normalizer(output_path)
+        logging.info("Loaded previous Normalizer!")
 
     msg = output_path
     output_path = comm.bcast(msg, root=0)
@@ -123,6 +126,7 @@ def main_head(args):
                 learner.update_aux()
 
             learner.save_weights(output_path)
+            learner.save_normalizer(output_path)
 
             avg_reward += done_info["total_reward"]
             avg_ep_time += done_info["episode_time"]

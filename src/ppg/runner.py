@@ -39,6 +39,7 @@ class Runner:
     def run_episode(self, i_episode, total_reward, eps_time):
         self.agent.memory.clear_memory()
         self.agent.load_weights(self.save_path)
+        self.agent.load_normalizer(self.save_path)
         ep_info = None
 
         for _ in range(self.n_update):

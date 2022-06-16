@@ -1,5 +1,7 @@
 from torch.utils.data import Dataset
 import numpy as np
+import torch
+
 
 class PolicyMemory(Dataset):
     def __init__(self):
@@ -55,6 +57,9 @@ class PolicyMemory(Dataset):
     def update_std(self, action_std):
         self.action_std = action_std
 
+    def norm_states(self, mean, std, clip):
+        self.states = np.clip((self.states - mean) / std, -clip, clip).tolist()
+
     def clear_memory(self):
         del self.states[:]
         del self.actions[:]
@@ -80,3 +85,36 @@ class AuxMemory(Dataset):
 
     def clear_memory(self):
         del self.states[:]
+
+
+class RunningMeanStd(object):
+    # https://en.wikipedia.org/wiki/Algorithms_for_calculating_variance#Parallel_algorithm
+    def __init__(self, shape=(), epsilon=1e-4, device=torch.device("cpu")):
+        self.device = device
+        self.mean = torch.zeros(shape).float().to(device)
+        self.var = torch.ones(shape).float().to(device)
+        self.count = torch.Tensor([epsilon]).float().to(device)
+
+    def update(self, batch):
+        batch = torch.FloatTensor(batch).to(self.device).detach()
+        batch_mean = torch.mean(batch, axis=0)
+        batch_var = torch.var(batch, axis=0)
+        batch_count = batch.shape[0]
+        self.update_from_moments(batch_mean, batch_var, batch_count)
+
+    def update_from_moments(self, batch_mean, batch_var, batch_count):
+        delta = batch_mean - self.mean
+        tot_count = self.count + batch_count
+
+        new_mean = self.mean + delta * batch_count / tot_count
+        m_a = self.var * self.count
+        m_b = batch_var * batch_count
+        m2 = m_a + m_b + np.square(delta) * self.count * batch_count / tot_count
+        new_var = m2 / tot_count
+        new_count = tot_count
+
+        self.mean, self.var, self.count = (new_mean, new_var, new_count)
+
+    def norm_state(self, state: torch.FloatTensor, clip: float):
+        return torch.clamp((state - self.mean) / self.var, -clip, clip)
+

@@ -4,8 +4,8 @@ import torch
 
 from src.ppg.distribution import Continous
 from src.ppg.loss import JointAux, TrulyPPO
-from src.ppg.memory import AuxMemory, PolicyMemory
-from src.ppg.model import Policy_Model, Value_Model
+from src.ppg.memory import AuxMemory, PolicyMemory, RunningMeanStd
+from src.ppg.model import PolicyModel, ValueModel
 from src.ppg.model import device
 
 from pathlib import Path
@@ -44,12 +44,12 @@ class Learner:
         self.is_training_mode = is_training_mode
         self.action_dim = action_dim
 
-        self.policy = Policy_Model(state_dim, action_dim, initial_logstd)
-        self.policy_old = Policy_Model(state_dim, action_dim, initial_logstd)
+        self.policy = PolicyModel(state_dim, action_dim, initial_logstd)
+        self.policy_old = PolicyModel(state_dim, action_dim, initial_logstd)
         self.policy_optimizer = Adam(self.policy.parameters(), lr=learning_rate)
 
-        self.value = Value_Model(state_dim)
-        self.value_old = Value_Model(state_dim)
+        self.value = ValueModel(state_dim)
+        self.value_old = ValueModel(state_dim)
         self.value_optimizer = Adam(self.value.parameters(), lr=learning_rate)
 
         self.policy_memory = PolicyMemory()
@@ -67,6 +67,7 @@ class Learner:
         self.aux_loss = JointAux(beta_clone)
 
         self.distributions = Continous()
+        self.normalizer = RunningMeanStd(state_dim, device=device)
 
         if is_training_mode:
             self.policy.train()
@@ -139,8 +140,14 @@ class Learner:
 
     # Update the model
     def update_ppo(self):
-        dataloader = DataLoader(self.policy_memory, self.ppo_batchsize, shuffle=False)
+        # Update normalizer and normalize states
+        self.normalizer.update(self.policy_memory.states)
+        
+        self.policy_memory.norm_states(
+            self.normalizer.mean.numpy(), self.normalizer.var.numpy(), 5
+        )
 
+        dataloader = DataLoader(self.policy_memory, self.ppo_batchsize, shuffle=False)
         # Optimize policy for K epochs:
         for _ in range(self.n_ppo_epochs):
             for (
@@ -174,6 +181,8 @@ class Learner:
     def update_aux(self):
         dataloader = DataLoader(self.aux_memory, self.aux_batchsize, shuffle=False)
 
+        print(self.aux_memory.states)
+
         # Optimize policy for K epochs:
         for _ in range(self.n_aux_epochs):
             for states in dataloader:
@@ -188,6 +197,7 @@ class Learner:
     def save_weights(self, path):
         torch.save(self.policy.state_dict(), Path(path) / "agent_policy.pth")
         torch.save(self.value.state_dict(), Path(path) / "agent_value.pth")
+
     def load_weights(self, path):
         self.policy.load_state_dict(
             torch.load(Path(path) / "agent_policy.pth", map_location=device)
@@ -195,3 +205,19 @@ class Learner:
         self.value.load_state_dict(
             torch.load(Path(path) / "agent_value.pth", map_location=device)
         )
+
+    def save_normalizer(self, path):
+        torch.save(
+            {
+                "mean": self.normalizer.mean,
+                "var": self.normalizer.var,
+                "count": self.normalizer.count,
+            },
+            Path(path) / "normalizer.pth",
+        )
+
+    def load_normalizer(self, path):
+        norm_dict = torch.load(Path(path) / "normalizer.pth", map_location=device)
+        self.normalizer.mean = norm_dict["mean"]
+        self.normalizer.var = norm_dict["var"]
+        self.normalizer.var = norm_dict["count"]
