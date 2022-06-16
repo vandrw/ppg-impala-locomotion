@@ -14,8 +14,18 @@ from src.utils.env_loader import make_gym_env
 from itertools import count as infinite_range
 import time
 import traceback
+import signal
 
 from src.utils.args import get_args
+
+interrupted = False
+
+def signal_handler(signum, frame):
+    global interrupted
+    interrupted = True
+
+# Register the signal handler
+signal.signal(signal.SIGTERM, signal_handler)
 
 
 def main_worker(args):
@@ -157,6 +167,10 @@ def main_head(args):
 
                 avg_reward = 0
                 avg_ep_time = 0
+
+            if interrupted:
+                logging.warning("SIGTERM received. Terminating...")
+                break
 
     except Exception:
         print("Main terminated")
