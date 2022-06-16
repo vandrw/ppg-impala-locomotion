@@ -118,10 +118,17 @@ class Learner:
         self.policy_optimizer.zero_grad()
         self.value_optimizer.zero_grad()
 
+        if loss.isnan().any():
+            print("loss is nan!")
+
         loss.backward()
 
         self.policy_optimizer.step()
         self.value_optimizer.step()
+
+        for d in self.policy.state_dict().values():
+            if d.isnan().any():
+                print(d)
 
     def training_aux(self, states):
         Returns = self.value(states).detach()
