@@ -2,10 +2,7 @@
 #SBATCH --job-name=myleg_ppg_mpi
 #SBATCH --time=12:00:00
 #SBATCH --output=output/sweep_mpi_%j.out
-#SBATCH --nodes=1
 #SBATCH --ntasks=11
-#SBATCH --mail-type=ALL
-#SBATCH --mail-user=
 #SBATCH --partition=regular
 
 module purge

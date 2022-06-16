@@ -14,6 +14,6 @@ module load PyTorch/1.10.0-fosscuda-2020b
 source /home/$USER/.envs/osim/bin/activate
 export LD_LIBRARY_PATH=/home/$USER/.libs/opensim_dependencies/ipopt/lib:/home/$USER/.libs/opensim_dependencies/adol-c/lib64:$LD_LIBRARY_PATH
 
-mpirun --mca opal_warn_on_missing_libcuda 0 python -m src.train_mpi -c configs/default.yml
+mpirun --mca opal_warn_on_missing_libcuda 0 python -m src.train_mpi -c configs/healthy.yml
 
 deactivate
