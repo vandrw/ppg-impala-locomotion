@@ -144,7 +144,7 @@ class Learner:
         self.normalizer.update(self.policy_memory.states)
         
         self.policy_memory.norm_states(
-            self.normalizer.mean.numpy(), self.normalizer.var.numpy(), 3
+            self.normalizer.mean.numpy(), self.normalizer.var.numpy(), clip=5
         )
 
         dataloader = DataLoader(self.policy_memory, self.ppo_batchsize, shuffle=False)

@@ -28,7 +28,7 @@ class Agent:
 
     def act(self, state):
         state = torch.FloatTensor(state).unsqueeze(0).to(self.device).detach()
-        state = self.normalizer.norm_state(state, clip=3)
+        state = self.normalizer.norm_state(state, clip=5)
         action_mean, action_std, _ = self.policy(state)
 
         # We don't need to sample the action in Test Mode. We only sample the action
