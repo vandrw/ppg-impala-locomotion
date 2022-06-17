@@ -190,8 +190,9 @@ def main_head(args):
         finish = time.time()
         timedelta = finish - start
         logging.info("Time: {}".format(str(datetime.timedelta(seconds=timedelta))))
-
-        comm.Abort()
+        
+        if not interrupted:
+            comm.Abort()
 
 
 if __name__ == "__main__":
