@@ -50,6 +50,23 @@ class TrulyPPO:
             worker_action_means, worker_std, actions
         ).detach()
 
+        # Getting Critic loss by using Clipped critic value
+        if self.value_clip is None:
+            critic_loss = (Returns - values).pow(2).mean() * 0.5
+        else:
+            # Minimize the difference between old value and new value
+            vpredclipped = old_values + torch.clamp(
+                values - Old_values, -self.value_clip, self.value_clip
+            )  
+            vf_losses1 = (Returns - values).pow(2)
+            vf_losses2 = (Returns - vpredclipped).pow(2)
+            
+            # Mean Squared Error
+            critic_loss = torch.max(vf_losses1, vf_losses2).mean() * 0.5
+
+        # Getting entropy from the action probability
+        dist_entropy = self.distributions.entropy(action_mean, action_std).mean()
+
         # Getting general advantages estimator and returns
         Advantages = self.policy_function.vtrace_generalized_advantage_estimation(
             values, rewards, next_values, dones, logprobs, Worker_logprobs
@@ -71,20 +88,6 @@ class TrulyPPO:
             ratios * Advantages - self.policy_kl_range,
         )
         pg_loss = pg_targets.mean()
-
-        # Getting entropy from the action probability
-        dist_entropy = self.distributions.entropy(action_mean, action_std).mean()
-
-        # Getting Critic loss by using Clipped critic value
-        if self.value_clip is None:
-            critic_loss = ((Returns - values).pow(2) * 0.5).mean()
-        else:
-            vpredclipped = old_values + torch.clamp(
-                values - Old_values, -self.value_clip, self.value_clip
-            )  # Minimize the difference between old value and new value
-            vf_losses1 = (Returns - values).pow(2) * 0.5  # Mean Squared Error
-            vf_losses2 = (Returns - vpredclipped).pow(2) * 0.5  # Mean Squared Error
-            critic_loss = torch.max(vf_losses1, vf_losses2).mean()
 
         # We need to maximaze Policy Loss to make agent always find Better Rewards
         # and minimize Critic Loss
