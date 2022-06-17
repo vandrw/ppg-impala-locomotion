@@ -6,7 +6,7 @@
 #SBATCH --mail-type=ALL
 #SBATCH --mail-user=
 #SBATCH --partition=regular
-#SBATCH --signal=USR1@60
+#SBATCH --signal=USR1@45
 
 module purge
 module load PyTorch/1.10.0-fosscuda-2020b
