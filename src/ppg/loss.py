@@ -62,13 +62,14 @@ class TrulyPPO:
         ).detach()
 
         # Finding Surrogate Loss
-        ratio = (logprobs - Old_logprobs).exp()  # ratios = old_logprobs / logprobs
+        # We are using positive log probs
+        ratio = (logprobs - Old_logprobs).exp()
         Kl = self.distributions.kl_divergence(
             Old_action_mean, old_action_std, action_mean, action_std
         )
 
         pg_targets = torch.where(
-            (Kl >= self.ppo_kl_range) & (ratio > 1),
+            torch.logical_and(Kl >= self.ppo_kl_range, ratio * Advantages > 1 * Advantages),
             self.slope_likelihood * ratio * Advantages - self.slope_rollback * Kl,
             ratio * Advantages,
         )
