@@ -81,36 +81,45 @@ def get_args():
 
     # TrulyPPO
     parser.add_argument(
-        "--n_ppo_epochs",
+        "--ppo_epochs",
         type=int,
         default=5,
         help="For how many epochs to update the PPO networks (both value and policy).",
     )
     parser.add_argument(
-        "--ppo_batch_size",
+        "--ppo_batchsize",
         type=int,
         default=16,
         help="Indicates how many batches will be used per update. The number of batches is equal to n_steps / batch_size.",
     )
     parser.add_argument(
-        "--ppo_delta",
+        "--ppo_kl_range",
         type=float,
         default=0.05,
         help="Decides the amount of clipping, indicating the (KL) trust region for the policy.",
     )
     parser.add_argument(
-        "--ppo_alpha",
+        "--slope_rollback",
         type=float,
         default=5.0,
         help="Decides the force of the rollback.",
     )
+    parser.add_argument(
+        "--slope_likelihood",
+        type=float,
+        default=1.0,
+        help="Decides whether we take into account the likelihood ratio between the old and the " 
+        + "new policy when performing the rollback. It should be either 0 or 1, but it is possible "
+        + "to provide any value inside or outside this interval. If this value is 0, try to provide "
+        + "a smaller value for slope_rollback (preferably < 1.0)."
+    )
 
     # Critic (PPO)
     parser.add_argument(
-        "--value_clip",
+        "--clip_range",
         type=float,
         default=1.0,
-        help="How much the critic values will be clipped, resulting in predicted values in the interval [-value_clip, value_clip].",
+        help="How much the critic values will be clipped, resulting in predicted values in the interval [-clip_range, clip_range].",
     )
     parser.add_argument(
         "--entropy_coef",
@@ -127,19 +136,19 @@ def get_args():
 
     # Auxiliary
     parser.add_argument(
-        "--n_aux_update",
+        "--aux_update",
         type=int,
         default=16,
         help="After how many sets of trajectories the Auxiliary is updated.",
     )
     parser.add_argument(
-        "--n_aux_epochs",
+        "--aux_epochs",
         type=int,
         default=6,
         help="For how many epochs to train the Auxiliary policy.",
     )
     parser.add_argument(
-        "--aux_batch_size",
+        "--aux_batchsize",
         type=int,
         default=32,
         help="The size of each minibatches, per auxiliary epoch.",

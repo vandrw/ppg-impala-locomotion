@@ -12,21 +12,22 @@ num_workers: 50         # How many agents you want to run asynchronously in Ray.
 n_steps: 1024           # How many steps to perform in the environment before the networks are updated (per worker).
 
 # TrulyPPO
-n_ppo_epochs: 2         # For how many epochs to update the PPO networks (both value and policy).
-ppo_batch_size: 32      # Indicates how many batches will be used per update. The number of batches is equal to n_steps / batch_size.
-ppo_delta: 0.05         # Decides the amount of clipping, indicating the (KL) trust region for the policy.
-ppo_alpha: 5.0          # Decides the force of the rollback.
+ppo_epochs: 2           # For how many epochs to update the PPO networks (both value and policy).
+ppo_batchsize: 32       # Indicates how many batches will be used per update. The number of batches is equal to n_steps / batch_size.
+ppo_kl_range: 0.05      # Decides the amount of clipping, indicating the (KL) trust region for the policy.
+slope_rollback: 5.0     # Decides the force of the rollback.
+slope_likelihood: 1     # Decides whether we take into account the likelihood ratio between the old and the new policy when performing the rollback.
 initial_logstd: -1.34   # Decides the initial value of the log variance of the policy distribution.
 
 # Critic (PPO)
-value_clip: 1.0         # How much the critic values will be clipped, resulting in predicted values in the interval [-value_clip, value_clip].
+clip_range: 1.0         # How much the critic values will be clipped, resulting in predicted values in the interval [-clip_range, clip_range].
 entropy_coef: 0.0       # How much action randomness is introduced.
 vf_loss_coef: 1.0       # Value function coefficient. Indicates how much the critic loss is taken into account.
 
 # Auxiliary
-n_aux_update: 32        # After how many sets of trajectories the Auxiliary is updated.
-n_aux_epochs: 6         # For how many epochs to train the Auxiliary policy.
-aux_batch_size: 64      # The size of each minibatches, per auxiliary epoch. 
+aux_update: 32          # After how many sets of trajectories the Auxiliary is updated.
+aux_epochs: 6           # For how many epochs to train the Auxiliary policy.
+aux_batchsize: 64       # The size of each minibatches, per auxiliary epoch. 
 beta_clone: 1.0         # Controls the trade-off between the old and new Auxiliary policy.
 
 # Optimization

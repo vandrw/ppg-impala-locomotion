@@ -28,9 +28,9 @@ class Continous:
 
 
 class PolicyFunction:
-    def __init__(self, gamma=0.99, lam=0.95):
+    def __init__(self, gamma=0.99, lambd=0.95):
         self.gamma = gamma
-        self.lam = lam
+        self.lambd = lambd
 
     def monte_carlo_discounted(self, rewards, dones):
         running_add = 0
@@ -59,7 +59,7 @@ class PolicyFunction:
         delta = ratio * delta
 
         for step in reversed(range(len(rewards))):
-            gae = (1.0 - dones[step]) * self.gamma * self.lam * gae
+            gae = (1.0 - dones[step]) * self.gamma * self.lambd * gae
             gae = delta[step] + ratio * gae
             adv.insert(0, gae)
 

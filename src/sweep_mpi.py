@@ -73,15 +73,16 @@ def main_head(args):
         state_dim,
         action_dim,
         args.train_mode,
-        args.ppo_delta,
-        args.ppo_alpha,
-        args.value_clip,
+        args.ppo_kl_range,
+        args.slope_rollback,
+        args.slope_likelihood,
+        args.clip_range,
         args.entropy_coef,
         args.vf_loss_coef,
-        args.ppo_batch_size,
-        args.n_ppo_epochs,
-        args.aux_batch_size,
-        args.n_aux_epochs,
+        args.ppo_batchsize,
+        args.ppo_epochs,
+        args.aux_batchsize,
+        args.aux_epochs,
         args.beta_clone,
         args.gamma,
         args.lambd,
@@ -123,7 +124,7 @@ def main_head(args):
             learner.save_all(states, actions, action_means, action_std, rewards, dones, next_states)
 
             learner.update_ppo()
-            if epoch % args.n_aux_update == 0:
+            if epoch % args.aux_update == 0:
                 learner.update_aux()
 
             learner.save_weights(output_path)

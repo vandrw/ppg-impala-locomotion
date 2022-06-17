@@ -6,8 +6,8 @@ from src.ppg.model import PolicyModel
 
 
 class Agent:
-    def __init__(self, state_dim, action_dim, initial_logstd, is_training_mode):
-        self.is_training_mode = is_training_mode
+    def __init__(self, state_dim, action_dim, initial_logstd, train_mode):
+        self.train_mode = train_mode
         self.device = torch.device("cpu")
 
         self.memory = PolicyMemory()
@@ -15,7 +15,7 @@ class Agent:
         self.policy = PolicyModel(state_dim, action_dim, initial_logstd, self.device)
         self.normalizer = RunningMeanStd(state_dim, device=self.device)
 
-        if is_training_mode:
+        if train_mode:
             self.policy.train()
         else:
             self.policy.eval()
@@ -33,7 +33,7 @@ class Agent:
 
         # We don't need to sample the action in Test Mode. We only sample the action
         # in Training Mode to explore the actions.
-        if self.is_training_mode:
+        if self.train_mode:
             # Sample the action
             action = self.distributions.sample(action_mean, action_std)
         else:

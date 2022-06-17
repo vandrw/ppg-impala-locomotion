@@ -5,22 +5,24 @@ import torch
 class TrulyPPO:
     def __init__(
         self,
-        policy_kl_range,
-        policy_params,
-        value_clip,
+        ppo_kl_range,
+        slope_rollback,
+        slope_likelihood,
+        clip_range,
         vf_loss_coef,
         entropy_coef,
         gamma,
-        lam,
+        lambd,
     ):
-        self.policy_kl_range = policy_kl_range
-        self.policy_params = policy_params
-        self.value_clip = value_clip
+        self.ppo_kl_range = ppo_kl_range
+        self.slope_rollback = slope_rollback
+        self.slope_likelihood = slope_likelihood
+        self.clip_range = clip_range
         self.vf_loss_coef = vf_loss_coef
         self.entropy_coef = entropy_coef
 
         self.distributions = Continous()
-        self.policy_function = PolicyFunction(gamma, lam)
+        self.policy_function = PolicyFunction(gamma, lambd)
 
     def compute_loss(
         self,
@@ -50,23 +52,6 @@ class TrulyPPO:
             worker_action_means, worker_std, actions
         ).detach()
 
-        # Getting Critic loss by using Clipped critic value
-        if self.value_clip is None:
-            critic_loss = (Returns - values).pow(2).mean() * 0.5
-        else:
-            # Minimize the difference between old value and new value
-            vpredclipped = old_values + torch.clamp(
-                values - Old_values, -self.value_clip, self.value_clip
-            )  
-            vf_losses1 = (Returns - values).pow(2)
-            vf_losses2 = (Returns - vpredclipped).pow(2)
-            
-            # Mean Squared Error
-            critic_loss = torch.max(vf_losses1, vf_losses2).mean() * 0.5
-
-        # Getting entropy from the action probability
-        dist_entropy = self.distributions.entropy(action_mean, action_std).mean()
-
         # Getting general advantages estimator and returns
         Advantages = self.policy_function.vtrace_generalized_advantage_estimation(
             values, rewards, next_values, dones, logprobs, Worker_logprobs
@@ -77,17 +62,34 @@ class TrulyPPO:
         ).detach()
 
         # Finding Surrogate Loss
-        ratios = (logprobs - Old_logprobs).exp()  # ratios = old_logprobs / logprobs
+        ratio = (logprobs - Old_logprobs).exp()  # ratios = old_logprobs / logprobs
         Kl = self.distributions.kl_divergence(
             Old_action_mean, old_action_std, action_mean, action_std
         )
 
         pg_targets = torch.where(
-            (Kl >= self.policy_kl_range) & (ratios > 1),
-            ratios * Advantages - self.policy_params * Kl,
-            ratios * Advantages - self.policy_kl_range,
+            (Kl >= self.ppo_kl_range) & (ratio > 1),
+            self.slope_likelihood * ratio * Advantages - self.slope_rollback * Kl,
+            ratio * Advantages,
         )
         pg_loss = pg_targets.mean()
+
+        # Getting entropy from the action probability
+        dist_entropy = self.distributions.entropy(action_mean, action_std).mean()
+
+        # Getting Critic loss by using Clipped critic value
+        if self.clip_range is None:
+            critic_loss = (Returns - values).pow(2).mean() * 0.5
+        else:
+            # Minimize the difference between old value and new value
+            vpredclipped = old_values + torch.clamp(
+                values - Old_values, -self.clip_range, self.clip_range
+            )  
+            vf_losses1 = (values - Returns).pow(2)
+            vf_losses2 = (vpredclipped - Returns).pow(2)
+            
+            # Mean Squared Error
+            critic_loss = torch.max(vf_losses1, vf_losses2).mean() * 0.5
 
         # We need to maximaze Policy Loss to make agent always find Better Rewards
         # and minimize Critic Loss

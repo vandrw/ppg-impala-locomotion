@@ -16,10 +16,11 @@ class Learner:
         self,
         state_dim,
         action_dim,
-        is_training_mode,
-        policy_kl_range,
-        policy_params,
-        value_clip,
+        train_mode,
+        ppo_kl_range,
+        slope_rollback,
+        slope_likelihood,
+        clip_range,
         entropy_coef,
         vf_loss_coef,
         ppo_batchsize,
@@ -28,21 +29,14 @@ class Learner:
         aux_epochs,
         beta_clone,
         gamma,
-        lam,
+        lambd,
         learning_rate,
         initial_logstd,
     ):
-        self.policy_kl_range = policy_kl_range
-        self.policy_params = policy_params
-        self.value_clip = value_clip
-        self.entropy_coef = entropy_coef
-        self.vf_loss_coef = vf_loss_coef
         self.ppo_batchsize = ppo_batchsize
-        self.n_ppo_epochs = ppo_epochs
+        self.ppo_epochs = ppo_epochs
         self.aux_batchsize = aux_batchsize
-        self.n_aux_epochs = aux_epochs
-        self.is_training_mode = is_training_mode
-        self.action_dim = action_dim
+        self.aux_epochs = aux_epochs
 
         self.policy = PolicyModel(state_dim, action_dim, initial_logstd)
         self.policy_old = PolicyModel(state_dim, action_dim, initial_logstd)
@@ -54,13 +48,14 @@ class Learner:
 
         self.policy_memory = PolicyMemory()
         self.policy_loss = TrulyPPO(
-            policy_kl_range,
-            policy_params,
-            value_clip,
+            ppo_kl_range,
+            slope_rollback,
+            slope_likelihood,
+            clip_range,
             vf_loss_coef,
             entropy_coef,
             gamma,
-            lam,
+            lambd,
         )
 
         self.aux_memory = AuxMemory()
@@ -69,7 +64,7 @@ class Learner:
         self.distributions = Continous()
         self.normalizer = RunningMeanStd(state_dim, device=device)
 
-        if is_training_mode:
+        if train_mode:
             self.policy.train()
             self.value.train()
         else:
@@ -149,7 +144,7 @@ class Learner:
 
         dataloader = DataLoader(self.policy_memory, self.ppo_batchsize, shuffle=False)
         # Optimize policy for K epochs:
-        for _ in range(self.n_ppo_epochs):
+        for _ in range(self.ppo_epochs):
             for (
                 states,
                 actions,
@@ -182,7 +177,7 @@ class Learner:
         dataloader = DataLoader(self.aux_memory, self.aux_batchsize, shuffle=False)
 
         # Optimize policy for K epochs:
-        for _ in range(self.n_aux_epochs):
+        for _ in range(self.aux_epochs):
             for states in dataloader:
                 self.training_aux(states.float().to(device))
 
