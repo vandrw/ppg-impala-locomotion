@@ -31,6 +31,7 @@ class PolicyFunction:
     def __init__(self, gamma=0.99, lambd=0.95):
         self.gamma = gamma
         self.lambd = lambd
+        self.limit = torch.FloatTensor([1.0]).to(device)
 
     def monte_carlo_discounted(self, rewards, dones):
         running_add = 0
@@ -52,8 +53,7 @@ class PolicyFunction:
         gae = 0
         adv = []
 
-        limit = torch.FloatTensor([1.0]).to(device)
-        ratio = torch.min(limit, (worker_logprobs - learner_logprobs).sum().exp())
+        ratio = torch.min(self.limit, (worker_logprobs - learner_logprobs).sum().exp())
 
         delta = rewards + (1.0 - dones) * self.gamma * next_values - values
         delta = ratio * delta
