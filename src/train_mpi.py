@@ -25,7 +25,7 @@ def signal_handler(signum, frame):
     interrupted = True
 
 # Register the signal handler
-signal.signal(signal.SIGTERM, signal_handler)
+signal.signal(signal.SIGUSR1, signal_handler)
 
 
 def main_worker(args):
@@ -58,6 +58,9 @@ def main_worker(args):
 
             data = (trajectory, done_info)
             comm.send(data, dest=0)
+            
+            if interrupted:
+                break
     except Exception as ex:
         print("Proc {} terminated".format(rank))
         traceback.print_exception(type(ex), ex, ex.__traceback__)
@@ -169,7 +172,7 @@ def main_head(args):
                 avg_ep_time = 0
 
             if interrupted:
-                logging.warning("SIGTERM received. Terminating...")
+                logging.warning("Termination signal received. Finishing...")
                 break
 
     except Exception:

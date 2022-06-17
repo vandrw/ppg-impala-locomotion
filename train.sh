@@ -6,7 +6,7 @@
 #SBATCH --mail-type=ALL
 #SBATCH --mail-user=
 #SBATCH --partition=regular
-#SBATCH --signal=B:TERM@0120
+#SBATCH --signal=USR1@60
 
 module purge
 module load PyTorch/1.10.0-fosscuda-2020b
@@ -14,6 +14,6 @@ module load PyTorch/1.10.0-fosscuda-2020b
 source /home/$USER/.envs/osim/bin/activate
 export LD_LIBRARY_PATH=/home/$USER/.libs/opensim_dependencies/ipopt/lib:/home/$USER/.libs/opensim_dependencies/adol-c/lib64:$LD_LIBRARY_PATH
 
-mpirun --mca opal_warn_on_missing_libcuda 0 python -m src.train_mpi -c configs/healthy.yml
+OMPI_MCA_opal_warn_on_missing_libcuda=0 srun python -m src.train_mpi -c configs/healthy.yml
 
 deactivate
