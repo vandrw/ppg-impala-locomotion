@@ -64,10 +64,11 @@ class Learner:
         self.aux_loss = JointAux(beta_clone)
 
         self.distributions = Continous()
+        
+        self.normalize_obs = normalize_obs
         if normalize_obs:
             self.normalizer = RunningMeanStd(state_dim, device=device)
             self.obs_clip_range = obs_clip_range
-            self.normalize_obs = normalize_obs
 
         if train_mode:
             self.policy.train()

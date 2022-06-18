@@ -22,10 +22,10 @@ class Agent:
         self.distributions = Continous(self.device)
         self.policy = PolicyModel(state_dim, action_dim, initial_logstd, self.device)
         
+        self.normalize_obs = normalize_obs
         if normalize_obs:
             self.normalizer = RunningMeanStd(state_dim, device=self.device)
             self.obs_clip_range = obs_clip_range
-            self.normalize_obs = normalize_obs
 
         if train_mode:
             self.policy.train()

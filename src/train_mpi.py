@@ -122,8 +122,14 @@ def main_head(args):
         learner.load_weights(output_path)
         logging.info("Loaded previous Learner weights!")
         if args.normalize_obs:
-            learner.load_normalizer(output_path)
-            logging.info("Loaded previous Normalizer!")
+            try:
+                learner.load_normalizer(output_path)
+                logging.info("Loaded previous Normalizer!")
+            except:    
+                logging.error("The previous run did not use a normalizer.")
+                logging.warning("Creating a new normalizer. Be aware that the " 
+                                + "policy is not trained for non-normalized states.")
+                learner.save_normalizer(output_path)
 
     msg = output_path
     output_path = comm.bcast(msg, root=0)
