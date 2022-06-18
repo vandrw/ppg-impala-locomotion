@@ -66,7 +66,7 @@ class TrulyPPO:
         # We are using positive log probs
         ratio = (logprobs - Old_logprobs).exp()
         Kl = self.distributions.kl_divergence(
-            Old_action_mean, old_action_std, action_mean, action_std
+            Old_action_mean, Old_action_std, action_mean, action_std
         )
 
         pg_targets = torch.where(
@@ -113,10 +113,11 @@ class JointAux:
     ):
         # Don't use old value in backpropagation
         Old_action_mean = old_action_mean.detach()
+        Old_action_std = old_action_std.detach()
 
         # Finding KL Divergence
         Kl = self.distributions.kl_divergence(
-            Old_action_mean, old_action_std, action_mean, action_std
+            Old_action_mean, Old_action_std, action_mean, action_std
         ).mean()
         aux_loss = ((Returns - values).pow(2) * 0.5).mean()
 
