@@ -39,6 +39,8 @@ def main_worker(args):
         args.data,
         args.initial_logstd,
         args.train_mode,
+        args.normalize_obs,
+        args.obs_clip_range,
         args.visualize,
         args.n_steps,
         rank,
@@ -144,7 +146,7 @@ def main_head(args):
                 learner.update_aux()
 
             learner.save_weights(output_path)
-            if args.obs_normalize:
+            if args.normalize_obs:
                 learner.save_normalizer(output_path)
 
             avg_reward += done_info["total_reward"]
