@@ -57,8 +57,11 @@ class PolicyMemory(Dataset):
     def update_std(self, action_std):
         self.action_std = action_std
 
-    def norm_states(self, mean, std, clip):
-        self.states = np.clip((self.states - mean) / std, -clip, clip).tolist()
+    def norm_states(self, mean, var, clip: float = 5 ,epsilon: float = 1e-8):
+        self.states = np.clip(
+            (self.states - mean) / np.sqrt(var + epsilon),
+             -clip, clip
+            ).tolist()
 
     def clear_memory(self):
         del self.states[:]
@@ -115,6 +118,7 @@ class RunningMeanStd(object):
 
         self.mean, self.var, self.count = (new_mean, new_var, new_count)
 
-    def norm_state(self, state: torch.FloatTensor, clip: float):
-        return torch.clamp((state - self.mean) / self.var, -clip, clip)
+    def norm_state(self, state: torch.FloatTensor, clip: float = 5, epsilon: float = 1e-8):
+        norm_ob = (state - self.mean) / torch.sqrt(self.var + epsilon)
+        return torch.clamp(norm_ob, -clip, clip)
 

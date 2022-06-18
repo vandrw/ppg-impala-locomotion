@@ -142,8 +142,6 @@ class Learner:
     def update_ppo(self):
         # Update normalizer and normalize states
         if self.normalize_obs:
-            self.normalizer.update(self.policy_memory.states)
-
             self.policy_memory.norm_states(
                 self.normalizer.mean.numpy(),
                 self.normalizer.var.numpy(),
@@ -176,6 +174,10 @@ class Learner:
         states, _, _, _, _, _, _ = self.policy_memory.get_all()
         self.aux_memory.save_all(states)
         self.policy_memory.clear_memory()
+
+        # Update normalizer
+        if self.normalize_obs:
+            self.normalizer.update(self.policy_memory.states)
 
         # Copy new weights into old policy:
         self.policy_old.load_state_dict(self.policy.state_dict())

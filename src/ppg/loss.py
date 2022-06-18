@@ -42,11 +42,12 @@ class TrulyPPO:
         # Don't use old value in backpropagation
         Old_values = old_values.detach()
         Old_action_mean = old_action_mean.detach()
+        Old_action_std = old_action_std.detach()
 
         # Finding the ratio (pi_theta / pi_theta__old):
         logprobs = self.distributions.logprob(action_mean, action_std, actions)
         Old_logprobs = self.distributions.logprob(
-            Old_action_mean, old_action_std, actions
+            Old_action_mean, Old_action_std, actions
         ).detach()
         Worker_logprobs = self.distributions.logprob(
             worker_action_means, worker_std, actions
