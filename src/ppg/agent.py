@@ -6,14 +6,26 @@ from src.ppg.model import PolicyModel
 
 
 class Agent:
-    def __init__(self, state_dim, action_dim, initial_logstd, train_mode):
+    def __init__(
+        self,
+        state_dim,
+        action_dim,
+        initial_logstd,
+        train_mode,
+        normalize_obs,
+        obs_clip_range,
+    ):
         self.train_mode = train_mode
         self.device = torch.device("cpu")
 
         self.memory = PolicyMemory()
         self.distributions = Continous(self.device)
         self.policy = PolicyModel(state_dim, action_dim, initial_logstd, self.device)
-        self.normalizer = RunningMeanStd(state_dim, device=self.device)
+        
+        if normalize_obs:
+            self.normalizer = RunningMeanStd(state_dim, device=self.device)
+            self.obs_clip_range = obs_clip_range
+            self.normalize_obs = normalize_obs
 
         if train_mode:
             self.policy.train()
@@ -28,7 +40,8 @@ class Agent:
 
     def act(self, state):
         state = torch.FloatTensor(state).unsqueeze(0).to(self.device).detach()
-        state = self.normalizer.norm_state(state, clip=5)
+        if self.normalize_obs:
+            state = self.normalizer.norm_state(state, clip=self.obs_clip_range)
         action_mean, action_std, _ = self.policy(state)
 
         # We don't need to sample the action in Test Mode. We only sample the action

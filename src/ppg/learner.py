@@ -17,10 +17,12 @@ class Learner:
         state_dim,
         action_dim,
         train_mode,
+        normalize_obs,
+        obs_clip_range,
         ppo_kl_range,
         slope_rollback,
         slope_likelihood,
-        clip_range,
+        val_clip_range,
         entropy_coef,
         vf_loss_coef,
         ppo_batchsize,
@@ -51,7 +53,7 @@ class Learner:
             ppo_kl_range,
             slope_rollback,
             slope_likelihood,
-            clip_range,
+            val_clip_range,
             vf_loss_coef,
             entropy_coef,
             gamma,
@@ -62,7 +64,10 @@ class Learner:
         self.aux_loss = JointAux(beta_clone)
 
         self.distributions = Continous()
-        self.normalizer = RunningMeanStd(state_dim, device=device)
+        if normalize_obs:
+            self.normalizer = RunningMeanStd(state_dim, device=device)
+            self.obs_clip_range = obs_clip_range
+            self.normalize_obs = normalize_obs
 
         if train_mode:
             self.policy.train()
@@ -136,11 +141,14 @@ class Learner:
     # Update the model
     def update_ppo(self):
         # Update normalizer and normalize states
-        self.normalizer.update(self.policy_memory.states)
-        
-        self.policy_memory.norm_states(
-            self.normalizer.mean.numpy(), self.normalizer.var.numpy(), clip=5
-        )
+        if self.normalize_obs:
+            self.normalizer.update(self.policy_memory.states)
+
+            self.policy_memory.norm_states(
+                self.normalizer.mean.numpy(),
+                self.normalizer.var.numpy(),
+                clip=self.obs_clip_range,
+            )
 
         dataloader = DataLoader(self.policy_memory, self.ppo_batchsize, shuffle=False)
         # Optimize policy for K epochs:

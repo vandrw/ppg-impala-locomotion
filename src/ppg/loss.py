@@ -8,7 +8,7 @@ class TrulyPPO:
         ppo_kl_range,
         slope_rollback,
         slope_likelihood,
-        clip_range,
+        val_clip_range,
         vf_loss_coef,
         entropy_coef,
         gamma,
@@ -17,7 +17,7 @@ class TrulyPPO:
         self.ppo_kl_range = ppo_kl_range
         self.slope_rollback = slope_rollback
         self.slope_likelihood = slope_likelihood
-        self.clip_range = clip_range
+        self.val_clip_range = val_clip_range
         self.vf_loss_coef = vf_loss_coef
         self.entropy_coef = entropy_coef
 
@@ -79,12 +79,12 @@ class TrulyPPO:
         dist_entropy = self.distributions.entropy(action_mean, action_std).mean()
 
         # Getting Critic loss by using Clipped critic value
-        if self.clip_range is None:
+        if self.val_clip_range is None:
             critic_loss = (Returns - values).pow(2).mean() * 0.5
         else:
             # Minimize the difference between old value and new value
             vpredclipped = old_values + torch.clamp(
-                values - Old_values, -self.clip_range, self.clip_range
+                values - Old_values, -self.val_clip_range, self.val_clip_range
             )  
             vf_losses1 = (values - Returns).pow(2)
             vf_losses2 = (vpredclipped - Returns).pow(2)

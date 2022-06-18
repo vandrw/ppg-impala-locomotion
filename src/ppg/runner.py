@@ -11,6 +11,8 @@ class Runner:
         data_subject,
         initial_logstd,
         training_mode,
+        normalize_obs,
+        obs_clip_range,
         render,
         n_update,
         tag,
@@ -25,11 +27,17 @@ class Runner:
         self.action_dim = self.env.action_space.shape[0]
 
         self.agent = Agent(
-            self.state_dim, self.action_dim, initial_logstd, training_mode
+            self.state_dim,
+            self.action_dim,
+            initial_logstd,
+            training_mode,
+            normalize_obs,
+            obs_clip_range,
         )
 
         self.tag = tag
         self.training_mode = training_mode
+        self.normalize_obs = normalize_obs
         self.n_update = n_update
         self.max_action = 1.0
 
@@ -39,7 +47,8 @@ class Runner:
     def run_episode(self, i_episode, total_reward, eps_time):
         self.agent.memory.clear_memory()
         self.agent.load_weights(self.save_path)
-        self.agent.load_normalizer(self.save_path)
+        if self.normalize_obs:
+            self.agent.load_normalizer(self.save_path)
         ep_info = None
 
         for _ in range(self.n_update):

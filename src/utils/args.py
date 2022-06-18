@@ -78,6 +78,17 @@ def get_args():
         default=1024,
         help="How many steps to perform in the environment before the networks are updated (per worker).",
     )
+    parser.add_argument(
+        "--normalize_obs",
+        action="store_true",
+        help="Whether to normalize the observations.",
+    )
+    parser.add_argument(
+        "--obs_clip_range",
+        type=float,
+        default=5.0,
+        help="Indicates how much the observations will be clipped after normalization.",
+    )
 
     # TrulyPPO
     parser.add_argument(
@@ -116,10 +127,10 @@ def get_args():
 
     # Critic (PPO)
     parser.add_argument(
-        "--clip_range",
+        "--val_clip_range",
         type=float,
         default=1.0,
-        help="How much the critic values will be clipped, resulting in predicted values in the interval [-clip_range, clip_range].",
+        help="How much the critic values will be clipped, resulting in predicted values in the interval [-val_clip_range, val_clip_range].",
     )
     parser.add_argument(
         "--entropy_coef",

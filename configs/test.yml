@@ -10,7 +10,7 @@ ppo_kl_range: 0.05
 slope_rollback: 5.0
 slope_likelihood: 1
 initial_logstd: -1.34
-clip_range: 1.0
+val_clip_range: 1.0
 entropy_coef: 0.0
 vf_loss_coef: 1.0
 aux_update: 32
