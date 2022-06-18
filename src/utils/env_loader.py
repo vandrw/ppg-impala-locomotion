@@ -24,9 +24,15 @@ def make_env(env_type, data_subject, visualize):
         from opensim_env.observation.concrete import RobinHealthyObserver
         from opensim_env.reward.concrete import RobinHealthyEvaluator
 
+        from opensim_env.observation.concrete.robin_healthy import RobinHealthyObserverConfig
+        obs_config = RobinHealthyObserverConfig(
+            include_body_parts=True,
+            include_imitation=False
+        )
+
         return OpensimEnv(
             OpensimEnvConfig(HEALTHY_PATH, init_pose=data.get_row(0), visualize=visualize),
-            lambda c: RobinHealthyObserver(c, data),
+            lambda c: RobinHealthyObserver(c, data, obs_config),
             DumbExampleController,
             lambda c: RobinHealthyEvaluator(c, data, 1.0, 1.1),
         )
@@ -34,10 +40,16 @@ def make_env(env_type, data_subject, visualize):
         from opensim_env.models import HEALTHY_ROUGH_TERRAIN_PATH
         from opensim_env.observation.concrete import RobinHealthyObserver
         from opensim_env.reward.concrete import RobinHealthyEvaluator
+        
+        from opensim_env.observation.concrete.robin_healthy import RobinHealthyObserverConfig
+        obs_config = RobinHealthyObserverConfig(
+            include_body_parts=True,
+            include_imitation=False
+        )
 
         return OpensimEnv(
             OpensimEnvConfig(HEALTHY_ROUGH_TERRAIN_PATH, init_pose=data.get_row(0), visualize=visualize),
-            lambda c: RobinHealthyObserver(c, data),
+            lambda c: RobinHealthyObserver(c, data, obs_config),
             DumbExampleController,
             lambda c: RobinHealthyEvaluator(c, data, 1.0, 1.1),
         )

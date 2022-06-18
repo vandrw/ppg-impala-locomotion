@@ -17,8 +17,8 @@ obs_clip_range: 5.0     # How much the observations will be clipped after normal
 ppo_epochs: 8           # For how many epochs to update the PPO networks (both value and policy).
 ppo_batchsize: 32       # Indicates how many batches will be used per update. The number of batches is equal to n_steps / batch_size.
 ppo_kl_range: 0.05      # Decides the amount of clipping, indicating the (KL) trust region for the policy.
-slope_rollback: 0.5     # Decides the force of the rollback.
-slope_likelihood: 0     # Decides whether we take into account the likelihood ratio between the old and the new policy when performing the rollback.
+slope_rollback: 5.0     # Decides the force of the rollback.
+slope_likelihood: 1     # Decides whether we take into account the likelihood ratio between the old and the new policy when performing the rollback.
 initial_logstd: -0.5    # Decides the initial value of the log variance of the policy distribution.
 
 # Critic (PPO)
