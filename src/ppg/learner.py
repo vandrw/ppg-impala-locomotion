@@ -220,4 +220,4 @@ class Learner:
         norm_dict = torch.load(Path(path) / "normalizer.pth", map_location=device)
         self.normalizer.mean = norm_dict["mean"]
         self.normalizer.var = norm_dict["var"]
-        self.normalizer.var = norm_dict["count"]
+        self.normalizer.count = norm_dict["count"]
