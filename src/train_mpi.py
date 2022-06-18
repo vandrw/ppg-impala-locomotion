@@ -133,6 +133,29 @@ def main_head(args):
         avg_reward = 0
         avg_ep_time = 0
         data = None
+
+        # Use the first set of results from each worker to update the normalizer.
+        # Do not use these results for training, since it will update the policy
+        # with the normal states.
+        if args.normalize_obs and not continue_run:
+            logging.info("Initializing normalizer. Using the first set of states from each worker...")
+            for t in range(w_size):
+                data = comm.recv()
+                trajectory, done_info = data
+                states, _, _, _, _, _, _ = trajectory
+                learner.normalizer.update(states)
+                avg_reward += done_info["total_reward"]
+                avg_ep_time += done_info["episode_time"]
+            
+            logging.info(
+                    "Normalizer update phase: {} trajectories, reward {}, episode time {}".format(
+                        t + 1, avg_reward / w_size, avg_ep_time / w_size
+                    )
+                )
+            learner.save_normalizer(output_path)
+            avg_reward = 0
+            avg_ep_time = 0
+
         for epoch in infinite_range(start_epoch):
 
             data = comm.recv()
@@ -161,7 +184,7 @@ def main_head(args):
                     wandb.log(
                         asdict(
                             EpochInfo(
-                                epoch,
+                                epoch + 1,
                                 time.time() - start,
                                 avg_reward,
                                 avg_ep_time
@@ -172,7 +195,7 @@ def main_head(args):
 
                 logging.info(
                     "Epoch {} (trajectory {}): reward {}, episode time {}".format(
-                        real_epoch, epoch, avg_reward, avg_ep_time
+                        real_epoch, epoch + 1, avg_reward, avg_ep_time
                     )
                 )
 
