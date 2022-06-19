@@ -49,7 +49,10 @@ def main_worker(args):
 
     trajectory, i_episode, total_reward, eps_time, done_info = runner.run_episode(rank, 0, 0)
 
-    data = (trajectory, done_info)
+    if args.normalize_obs:
+        data = (trajectory, done_info, runner.normalizer.mean, runner.normalizer.var)
+    else:
+        data = (trajectory, done_info)
     comm.send(data, dest=0)
 
     try:
@@ -58,7 +61,10 @@ def main_worker(args):
                 i_episode, total_reward, eps_time
             )
 
-            data = (trajectory, done_info)
+            if args.normalize_obs:
+                data = (trajectory, done_info, runner.normalizer.mean, runner.normalizer.var)
+            else:
+                data = (trajectory, done_info)
             comm.send(data, dest=0)
             
             if interrupted:
@@ -117,19 +123,19 @@ def main_head(args):
     if not continue_run:
         learner.save_weights(output_path)
         if args.normalize_obs:
-            learner.save_normalizer(output_path)
+            learner.normalizer.save(output_path)
     else:
         learner.load_weights(output_path)
         logging.info("Loaded previous Learner weights!")
         if args.normalize_obs:
             try:
-                learner.load_normalizer(output_path)
+                learner.normalizer.load(output_path)
                 logging.info("Loaded previous Normalizer!")
             except:    
                 logging.error("The previous run did not use a normalizer.")
                 logging.warning("Creating a new normalizer. Be aware that the " 
                                 + "policy is not trained for non-normalized states.")
-                learner.save_normalizer(output_path)
+                learner.normalizer.save(output_path)
 
     msg = output_path
     output_path = comm.bcast(msg, root=0)
@@ -147,9 +153,9 @@ def main_head(args):
             logging.info("Initializing normalizer. Using the first set of states from each worker...")
             for t in range(w_size):
                 data = comm.recv()
-                trajectory, done_info = data
-                states, _, _, _, _, _, _ = trajectory
-                learner.normalizer.update(states)
+                _, done_info, w_norm_mean, w_norm_var = data
+
+                learner.normalizer.update(w_norm_mean, w_norm_var, args.n_steps)
                 avg_reward += done_info["total_reward"]
                 avg_ep_time += done_info["episode_time"]
             
@@ -158,14 +164,19 @@ def main_head(args):
                         t + 1, avg_reward / w_size, avg_ep_time / w_size
                     )
                 )
-            learner.save_normalizer(output_path)
+            learner.normalizer.save(output_path)
             avg_reward = 0
             avg_ep_time = 0
 
         for epoch in infinite_range(start_epoch):
 
             data = comm.recv()
-            trajectory, done_info = data
+            
+            if args.normalize_obs:
+                trajectory, done_info, w_norm_mean, w_norm_var = data
+                learner.normalizer.update(w_norm_mean, w_norm_var, args.n_steps)
+            else:
+                trajectory, done_info = data
 
             states, actions, action_means, action_std, rewards, dones, next_states = trajectory
             learner.save_all(states, actions, action_means, action_std, rewards, dones, next_states)
@@ -176,7 +187,7 @@ def main_head(args):
 
             learner.save_weights(output_path)
             if args.normalize_obs:
-                learner.save_normalizer(output_path)
+                learner.normalizer.save(output_path)
 
             avg_reward += done_info["total_reward"]
             avg_ep_time += done_info["episode_time"]

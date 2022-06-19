@@ -2,9 +2,10 @@ from torch.utils.data import DataLoader
 from torch.optim import Adam
 import torch
 
-from src.ppg.distribution import Continous
+from src.ppg.distribution import Continuous
 from src.ppg.loss import JointAux, TrulyPPO
-from src.ppg.memory import AuxMemory, PolicyMemory, RunningMeanStd
+from src.ppg.memory import AuxMemory, PolicyMemory
+from src.ppg.normalizer import RunningMeanStd
 from src.ppg.model import PolicyModel, ValueModel
 from src.ppg.model import device
 
@@ -63,11 +64,11 @@ class Learner:
         self.aux_memory = AuxMemory()
         self.aux_loss = JointAux(beta_clone)
 
-        self.distributions = Continous()
+        self.distributions = Continuous()
         
         self.normalize_obs = normalize_obs
         if normalize_obs:
-            self.normalizer = RunningMeanStd(state_dim, device=device)
+            self.normalizer = RunningMeanStd(state_dim)
             self.obs_clip_range = obs_clip_range
 
         if train_mode:
@@ -141,15 +142,6 @@ class Learner:
 
     # Update the model
     def update_ppo(self):
-        # Update normalizer and normalize states
-        if self.normalize_obs:
-            self.normalizer.update(self.policy_memory.states)
-            self.policy_memory.norm_states(
-                self.normalizer.mean.numpy(),
-                self.normalizer.var.numpy(),
-                clip=self.obs_clip_range,
-            )
-
         dataloader = DataLoader(self.policy_memory, self.ppo_batchsize, shuffle=False)
         # Optimize policy for K epochs:
         for _ in range(self.ppo_epochs):
@@ -206,19 +198,3 @@ class Learner:
         self.value.load_state_dict(
             torch.load(Path(path) / "agent_value.pth", map_location=device)
         )
-
-    def save_normalizer(self, path):
-        torch.save(
-            {
-                "mean": self.normalizer.mean,
-                "var": self.normalizer.var,
-                "count": self.normalizer.count,
-            },
-            Path(path) / "normalizer.pth",
-        )
-
-    def load_normalizer(self, path):
-        norm_dict = torch.load(Path(path) / "normalizer.pth", map_location=device)
-        self.normalizer.mean = norm_dict["mean"]
-        self.normalizer.var = norm_dict["var"]
-        self.normalizer.count = norm_dict["count"]

@@ -1,7 +1,7 @@
 import torch
 from pathlib import Path
-from src.ppg.distribution import Continous
-from src.ppg.memory import PolicyMemory, RunningMeanStd
+from src.ppg.distribution import Continuous
+from src.ppg.memory import PolicyMemory
 from src.ppg.model import PolicyModel
 
 
@@ -12,20 +12,13 @@ class Agent:
         action_dim,
         initial_logstd,
         train_mode,
-        normalize_obs,
-        obs_clip_range,
     ):
         self.train_mode = train_mode
         self.device = torch.device("cpu")
 
         self.memory = PolicyMemory()
-        self.distributions = Continous(self.device)
+        self.distributions = Continuous(self.device)
         self.policy = PolicyModel(state_dim, action_dim, initial_logstd, self.device)
-        
-        self.normalize_obs = normalize_obs
-        if normalize_obs:
-            self.normalizer = RunningMeanStd(state_dim, device=self.device)
-            self.obs_clip_range = obs_clip_range
 
         if train_mode:
             self.policy.train()
@@ -40,8 +33,6 @@ class Agent:
 
     def act(self, state):
         state = torch.FloatTensor(state).unsqueeze(0).to(self.device).detach()
-        if self.normalize_obs:
-            state = self.normalizer.norm_state(state, clip=self.obs_clip_range)
         action_mean, action_std, _ = self.policy(state)
 
         # We don't need to sample the action in Test Mode. We only sample the action
@@ -62,9 +53,3 @@ class Agent:
         self.policy.load_state_dict(
             torch.load(Path(path) / "agent_policy.pth", map_location=self.device)
         )
-
-    def load_normalizer(self, path):
-        norm_dict = torch.load(Path(path) / "normalizer.pth", map_location=self.device)
-        self.normalizer.mean = norm_dict["mean"]
-        self.normalizer.var = norm_dict["var"]
-        self.normalizer.count = norm_dict["count"]

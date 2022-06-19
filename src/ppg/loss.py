@@ -1,4 +1,4 @@
-from src.ppg.distribution import Continous, PolicyFunction
+from src.ppg.distribution import Continuous, PolicyFunction
 import torch
 
 
@@ -21,7 +21,7 @@ class TrulyPPO:
         self.vf_loss_coef = vf_loss_coef
         self.entropy_coef = entropy_coef
 
-        self.distributions = Continous()
+        self.distributions = Continuous()
         self.policy_function = PolicyFunction(gamma, lambd)
 
     def compute_loss(
@@ -105,7 +105,7 @@ class TrulyPPO:
 
 class JointAux:
     def __init__(self, beta_clone):
-        self.distributions = Continous()
+        self.distributions = Continuous()
         self.beta_clone = beta_clone
 
     def compute_loss(

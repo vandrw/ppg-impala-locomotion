@@ -4,7 +4,7 @@ import torch
 
 from src.ppg.model import device
 
-class Continous:
+class Continuous:
     def __init__(self, myDevice=None):
         self.device = myDevice if myDevice != None else device
 
