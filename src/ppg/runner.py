@@ -15,7 +15,7 @@ class Runner:
         normalize_obs,
         obs_clip_range,
         render,
-        n_update,
+        n_steps,
         tag,
         save_path,
     ):
@@ -41,7 +41,7 @@ class Runner:
 
         self.tag = tag
         self.training_mode = training_mode
-        self.n_update = n_update
+        self.n_steps = n_steps
         self.max_action = 1.0
 
         self.save_path = save_path
@@ -55,7 +55,7 @@ class Runner:
             original_states = []
         ep_info = None
 
-        for _ in range(self.n_update):
+        for _ in range(self.n_steps):
             if self.normalize_obs:
                 original_states.append(self.states)
                 self.states = self.normalizer.norm_obs(
