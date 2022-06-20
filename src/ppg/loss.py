@@ -81,7 +81,7 @@ class TrulyPPO:
 
         # Getting Critic loss by using Clipped critic value
         if self.val_clip_range is None:
-            critic_loss = (Returns - values).pow(2).mean() * 0.5
+            critic_loss = (Returns - values).pow(2).mean().multiply(0.5)
         else:
             # Minimize the difference between old value and new value
             vpredclipped = old_values + torch.clamp(
@@ -91,7 +91,7 @@ class TrulyPPO:
             vf_losses2 = (vpredclipped - Returns).pow(2)
             
             # Mean Squared Error
-            critic_loss = torch.max(vf_losses1, vf_losses2).mean() * 0.5
+            critic_loss = torch.max(vf_losses1, vf_losses2).mean().multiply(0.5)
 
         # We need to maximaze Policy Loss to make agent always find Better Rewards
         # and minimize Critic Loss
@@ -119,6 +119,6 @@ class JointAux:
         Kl = self.distributions.kl_divergence(
             Old_action_mean, Old_action_std, action_mean, action_std
         ).mean()
-        aux_loss = (Returns - values).pow(2).mean() * 0.5
+        aux_loss = (Returns - values).pow(2).mean().multiply(0.5)
 
         return aux_loss + self.beta_clone * Kl
