@@ -73,8 +73,6 @@ def main_head(args):
         state_dim,
         action_dim,
         args.train_mode,
-        args.normalize_obs,
-        args.obs_clip_range,
         args.ppo_kl_range,
         args.slope_rollback,
         args.slope_likelihood,

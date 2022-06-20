@@ -10,9 +10,6 @@ log_wandb: True         # Enables logging in wandb.
 train_mode: True        # If you want to train the agent, set this to True. If false, no changes will be made to the model.
 num_workers: 50         # How many agents you want to run asynchronously in Ray. If using the mpi implementation, simply provide the argument '-n X' after 'mpirun' to train with X workers.
 n_steps: 1024           # How many steps to perform in the environment before the networks are updated (per worker).
-normalize_obs: True     # Whether to normalize the observations.
-obs_clip_range: 5.0     # How much the observations will be clipped after normalizing. Must enable normalize_obs to work.
-
 
 # TrulyPPO
 ppo_epochs: 2           # For how many epochs to update the PPO networks (both value and policy).

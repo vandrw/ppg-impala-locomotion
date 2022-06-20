@@ -5,7 +5,6 @@ import torch
 from src.ppg.distribution import Continuous
 from src.ppg.loss import JointAux, TrulyPPO
 from src.ppg.memory import AuxMemory, PolicyMemory
-from src.ppg.normalizer import RunningMeanStd
 from src.ppg.model import PolicyModel, ValueModel
 from src.ppg.model import device
 
@@ -18,8 +17,6 @@ class Learner:
         state_dim,
         action_dim,
         train_mode,
-        normalize_obs,
-        obs_clip_range,
         ppo_kl_range,
         slope_rollback,
         slope_likelihood,
@@ -66,11 +63,6 @@ class Learner:
 
         self.distributions = Continuous()
         
-        self.normalize_obs = normalize_obs
-        if normalize_obs:
-            self.normalizer = RunningMeanStd(state_dim)
-            self.obs_clip_range = obs_clip_range
-
         if train_mode:
             self.policy.train()
             self.value.train()

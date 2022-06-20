@@ -1,7 +1,6 @@
 import gym
 from src.utils.env_loader import make_gym_env
 from src.ppg.agent import Agent
-from src.ppg.normalizer import RunningMeanStd
 import numpy as np
 
 
@@ -12,8 +11,6 @@ class Runner:
         data_subject,
         initial_logstd,
         training_mode,
-        normalize_obs,
-        obs_clip_range,
         render,
         n_steps,
         tag,
@@ -34,11 +31,6 @@ class Runner:
             training_mode
         )
 
-        self.normalize_obs = normalize_obs
-        if normalize_obs:
-            self.normalizer = RunningMeanStd(self.state_dim)
-            self.obs_clip_range = obs_clip_range
-
         self.tag = tag
         self.training_mode = training_mode
         self.n_steps = n_steps
@@ -50,18 +42,11 @@ class Runner:
     def run_episode(self, i_episode, total_reward, eps_time):
         self.agent.memory.clear_memory()
         self.agent.load_weights(self.save_path)
-        if self.normalize_obs:
-            self.normalizer.load(self.save_path)
-            original_states = []
+    
         ep_info = {"total_reward": 0, "episode_time": 0}
         num_episodes = 1.0e-8
 
         for _ in range(self.n_steps):
-            if self.normalize_obs:
-                original_states.append(self.states)
-                self.states = self.normalizer.norm_obs(
-                    self.states, clip=self.obs_clip_range
-                )[0]
 
             action, action_mean, action_std = self.agent.act(self.states)
 
@@ -95,11 +80,6 @@ class Runner:
                 eps_time = 0
 
         self.agent.memory.update_std(action_std)
-        
-        if self.normalize_obs:
-            np_batch = np.array(original_states)
-            self.normalizer.mean = np.mean(np_batch, axis=0)
-            self.normalizer.var = np.var(np_batch, axis=0)
         
         ep_info["total_reward"] /= num_episodes
         ep_info["episode_time"] /= num_episodes
