@@ -53,7 +53,8 @@ class Runner:
         if self.normalize_obs:
             self.normalizer.load(self.save_path)
             original_states = []
-        ep_info = None
+        ep_info = {"total_reward": 0, "episode_time": 0}
+        num_episodes = 1.0e-8
 
         for _ in range(self.n_steps):
             if self.normalize_obs:
@@ -86,7 +87,9 @@ class Runner:
                 self.states = self.env.reset()
                 i_episode += 1
 
-                ep_info = {"total_reward": total_reward, "episode_time": eps_time}
+                ep_info["total_reward"] += total_reward
+                ep_info["episode_time"] += eps_time
+                num_episodes += 1
 
                 total_reward = 0
                 eps_time = 0
@@ -97,6 +100,9 @@ class Runner:
             np_batch = np.array(original_states)
             self.normalizer.mean = np.mean(np_batch, axis=0)
             self.normalizer.var = np.var(np_batch, axis=0)
+        
+        ep_info["total_reward"] /= num_episodes
+        ep_info["episode_time"] /= num_episodes
 
         return (
             self.agent.get_all(),

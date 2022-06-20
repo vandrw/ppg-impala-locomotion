@@ -61,6 +61,8 @@ class PolicyFunction:
         for step in reversed(range(len(rewards))):
             gae = (1.0 - dones[step]) * self.gamma * self.lambd * gae
             gae = delta[step] + ratio * gae
-            adv.insert(0, gae)
+            adv.append(gae)
+
+        adv.reverse()
 
         return torch.stack(adv)
