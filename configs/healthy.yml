@@ -17,22 +17,22 @@ obs_clip_range: 5.0     # How much the observations will be clipped after normal
 ppo_epochs: 8           # For how many epochs to update the PPO networks (both value and policy).
 ppo_batchsize: 32       # Indicates how many batches will be used per update. The number of batches is equal to n_steps / batch_size.
 ppo_kl_range: 0.05      # Decides the amount of clipping, indicating the (KL) trust region for the policy.
-slope_rollback: 5.0     # Decides the force of the rollback.
-slope_likelihood: 1     # Decides whether we take into account the likelihood ratio between the old and the new policy when performing the rollback.
-initial_logstd: -1.0    # Decides the initial value of the log variance of the policy distribution.
+slope_rollback: 0.4     # Decides the force of the rollback.
+slope_likelihood: 0     # Decides whether we take into account the likelihood ratio between the old and the new policy when performing the rollback.
+initial_logstd: -0.75   # Decides the initial value of the log variance of the policy distribution.
 
 # Critic (PPO)
-val_clip_range: 1.0     # How much the critic values will be clipped, resulting in predicted values in the interval [-val_clip_range, val_clip_range].
+val_clip_range: 0.2     # How much the critic values will be clipped, resulting in predicted values in the interval [-val_clip_range, val_clip_range].
 entropy_coef: 0.0       # How much action randomness is introduced. Because we use Standard Deviation for Continuous, no need to use Entropy for randomness.
-vf_loss_coef: 1.0       # Value function coefficient. Indicates how much the critic loss is taken into account.
+vf_loss_coef: 0.5       # Value function coefficient. Indicates how much the critic loss is taken into account.
 
 # Auxiliary
 aux_update: 32          # After how many sets of trajectories the Auxiliary is updated.
 aux_epochs: 16          # For how many epochs to train the Auxiliary policy.
 aux_batchsize: 64       # The size of each minibatches, per auxiliary epoch. 
-beta_clone: 1.2         # Controls the trade-off between the old and new Auxiliary policy.
+beta_clone: 1.0         # Controls the trade-off between the old and new Auxiliary policy.
 
 # Optimization
 gamma: 0.99             # Discount factor. Reduces the value of future states. 
 lambd: 0.95             # GAE parameter used to reduce variance during training.
-learning_rate: 1.0e-4   # Indicates the step-size taken during gradient descent.
+learning_rate: 2.0e-4   # Indicates the step-size taken during gradient descent.

@@ -43,11 +43,11 @@ class Learner:
 
         self.policy = PolicyModel(state_dim, action_dim, initial_logstd)
         self.policy_old = PolicyModel(state_dim, action_dim, initial_logstd)
-        self.policy_optimizer = Adam(self.policy.parameters(), lr=learning_rate)
+        self.policy_optimizer = Adam(self.policy.parameters(), lr=learning_rate, eps=1e-5)
 
         self.value = ValueModel(state_dim)
         self.value_old = ValueModel(state_dim)
-        self.value_optimizer = Adam(self.value.parameters(), lr=learning_rate)
+        self.value_optimizer = Adam(self.value.parameters(), lr=learning_rate, eps=1e-5)
 
         self.policy_memory = PolicyMemory()
         self.policy_loss = TrulyPPO(
