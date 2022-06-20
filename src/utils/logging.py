@@ -46,6 +46,9 @@ def init_logging(config):
         try:
             with open(Path(output_path) / "epoch.info", "r") as ep_file:
                 start_epoch = int(ep_file.readline())
+
+            if start_epoch % config.num_workers != 0:
+                start_epoch = start_epoch - (start_epoch % config.num_workers)
             logging.info(
                 "Found previous model in {}. Continuing training from epoch {}.".format(
                     output_path, start_epoch
