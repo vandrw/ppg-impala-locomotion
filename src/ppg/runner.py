@@ -94,7 +94,9 @@ class Runner:
         self.agent.memory.update_std(action_std)
         
         if self.normalize_obs:
-            self.normalizer.update_from_batch(original_states)
+            np_batch = np.array(original_states)
+            self.normalizer.mean = np.mean(np_batch, axis=0)
+            self.normalizer.var = np.var(np_batch, axis=0)
 
         return (
             self.agent.get_all(),
