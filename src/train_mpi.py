@@ -182,7 +182,7 @@ def main_head(args):
             learner.save_all(states, actions, action_means, action_std, rewards, dones, next_states)
 
             learner.update_ppo()
-            if epoch % args.aux_update == 0:
+            if (epoch + 1) % args.aux_update == 0:
                 learner.update_aux()
 
             learner.save_weights(output_path)
