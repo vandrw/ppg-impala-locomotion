@@ -25,7 +25,7 @@ initial_logstd: -1.34   # Decides the initial value of the log variance of the p
 # Critic (PPO)
 val_clip_range: 0.2     # How much the critic values will be clipped, resulting in predicted values in the interval [-val_clip_range, val_clip_range].
 entropy_coef: 0.0       # How much action randomness is introduced.
-vf_loss_coef: 0.5       # Value function coefficient. Indicates how much the critic loss is taken into account.
+vf_loss_coef: 1.0       # Value function coefficient. Indicates how much the critic loss is taken into account.
 
 # Auxiliary
 aux_update: 32          # After how many sets of trajectories the Auxiliary is updated.
