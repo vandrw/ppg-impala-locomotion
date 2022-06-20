@@ -119,6 +119,6 @@ class JointAux:
         Kl = self.distributions.kl_divergence(
             Old_action_mean, Old_action_std, action_mean, action_std
         ).mean()
-        aux_loss = ((Returns - values).pow(2) * 0.5).mean()
+        aux_loss = (Returns - values).pow(2).mean() * 0.5
 
         return aux_loss + self.beta_clone * Kl
