@@ -1,8 +1,14 @@
 import torch
 import torch.nn as nn
+import numpy as np
 
 device = torch.device("cuda:0" if torch.cuda.is_available() else "cpu")
 dataType = torch.cuda.FloatTensor if torch.cuda.is_available() else torch.FloatTensor
+
+def layer_init(layer, std=np.sqrt(2), bias_const=0.0):
+    nn.init.orthogonal_(layer.weight, std)
+    nn.init.constant_(layer.bias, bias_const)
+    return layer
 
 class PolicyModel(nn.Module):
     def __init__(self, state_dim, action_dim, initial_logstd, myDevice=None):
@@ -10,17 +16,16 @@ class PolicyModel(nn.Module):
 
         self.device = myDevice if myDevice != None else device
         self.nn_layer = nn.Sequential(
-                nn.Linear(state_dim, 512),
-                nn.LeakyReLU(0.01),
-                nn.Linear(512, 256),
-                nn.LeakyReLU(0.01)
+                layer_init(nn.Linear(state_dim, 64)),
+                nn.Tanh(),
+                layer_init(nn.Linear(64, 64)),
+                nn.Tanh()
               ).float().to(self.device)
 
         # The muscle activations in OpenSim are constrained to [0, 1]
         # Therefore, we use a Sigmoid function as the output.
         self.actor_mean = nn.Sequential(
-                nn.Linear(256, action_dim),
-                nn.Sigmoid()
+                layer_init(nn.Linear(64, action_dim), std=0.01),
               ).float().to(self.device)
 
         self.actor_logstd = nn.parameter.Parameter(
@@ -28,7 +33,7 @@ class PolicyModel(nn.Module):
             ).float().to(self.device)
             
         self.critic_layer = nn.Sequential(
-                nn.Linear(256, 1)
+                layer_init(nn.Linear(64, 1), std=1.0)
               ).float().to(self.device)
 
     def forward(self, states):
@@ -47,11 +52,11 @@ class ValueModel(nn.Module):
 
         self.device = myDevice if myDevice != None else device
         self.nn_layer = nn.Sequential(
-                nn.Linear(state_dim, 256),
-                nn.LeakyReLU(0.01),
-                nn.Linear(256, 128),
-                nn.LeakyReLU(0.01),
-                nn.Linear(128, 1)
+                layer_init(nn.Linear(state_dim, 64)),
+                nn.Tanh(),
+                layer_init(nn.Linear(64, 64)),
+                nn.Tanh(),
+                layer_init(nn.Linear(64, 1), std=1.0)
               ).float().to(self.device)
 
     def forward(self, states):

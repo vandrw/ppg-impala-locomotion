@@ -47,8 +47,9 @@ def main_worker(args):
 
     trajectory, i_episode, total_reward, eps_time, done_info = runner.run_episode(rank, 0, 0)
 
-    data = (trajectory, done_info)
-    comm.send(data, dest=0)
+    # Do not send first episode values to set up the normalizers.
+    # data = (trajectory, done_info)
+    # comm.send(data, dest=0)
 
     try:
         for _ in infinite_range(0):
