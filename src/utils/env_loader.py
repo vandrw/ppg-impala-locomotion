@@ -1,4 +1,5 @@
 from pathlib import Path
+import numpy as np
 
 import gym
 
@@ -68,4 +69,11 @@ def make_gym_env(env_type, data_subject, visualize):
     gym.register(
         "OpenSimEnv-v1", entry_point=OpensimGymEnv, kwargs=dict(env=lambda: make_env(env_type, data_subject, visualize))
     )
-    return "OpenSimEnv-v1"
+
+    env = gym.make("OpenSimEnv-v1", disable_env_checker=True)
+    env = gym.wrappers.ClipAction(env)
+    env = gym.wrappers.NormalizeObservation(env)
+    env = gym.wrappers.TransformObservation(env, lambda obs: np.clip(obs, -10, 10))
+    env = gym.wrappers.NormalizeReward(env)
+
+    return env

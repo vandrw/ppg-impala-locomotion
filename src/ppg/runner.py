@@ -16,10 +16,10 @@ class Runner:
         tag,
         save_path,
     ):
-        env_name = make_gym_env(
+        self.env = make_gym_env(
             experiment_type, data_subject=data_subject, visualize=render
         )
-        self.env = gym.make(env_name, disable_env_checker=True)
+
         self.states = self.env.reset()
         self.state_dim = self.env.observation_space.shape[0]
         self.action_dim = self.env.action_space.shape[0]
@@ -34,7 +34,6 @@ class Runner:
         self.tag = tag
         self.training_mode = training_mode
         self.n_steps = n_steps
-        self.max_action = 1.0
 
         self.save_path = save_path
         print("[Proc {}] Worker initialized.".format(tag))
@@ -50,8 +49,7 @@ class Runner:
 
             action, action_mean, action_std = self.agent.act(self.states)
 
-            action_gym = np.clip(action, 0.0, 1.0) * self.max_action
-            next_state, reward, done, _ = self.env.step(action_gym)
+            next_state, reward, done, _ = self.env.step(action)
 
             eps_time += 1
             total_reward += reward

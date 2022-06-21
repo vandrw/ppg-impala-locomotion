@@ -35,13 +35,7 @@ class Agent:
         state = torch.FloatTensor(state).unsqueeze(0).to(self.device).detach()
         action_mean, action_std, _ = self.policy(state)
 
-        # We don't need to sample the action in Test Mode. We only sample the action
-        # in Training Mode to explore the actions.
-        if self.train_mode:
-            # Sample the action
-            action = self.distributions.sample(action_mean, action_std)
-        else:
-            return action_mean.squeeze(0).detach().numpy(), None, None
+        action = self.distributions.sample(action_mean, action_std)
 
         return (
             action.squeeze(0).cpu().numpy(),

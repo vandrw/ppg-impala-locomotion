@@ -80,9 +80,7 @@ def main_head(args):
 
     wandb_run, continue_run, start_epoch, output_path = init_logging(args)
 
-    env_name = make_gym_env(args.env, args.data, visualize=args.visualize)
-
-    env = gym.make(env_name, disable_env_checker=True)
+    env = make_gym_env(args.env, args.data, visualize=args.visualize)
     state_dim = env.observation_space.shape[0]
     action_dim = env.action_space.shape[0]
 
