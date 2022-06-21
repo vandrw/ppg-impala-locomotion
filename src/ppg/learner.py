@@ -1,5 +1,5 @@
 from torch.utils.data import DataLoader
-from torch.optim import Adam
+from torch.optim import AdamW
 import torch
 
 from src.ppg.distribution import Continuous
@@ -40,11 +40,11 @@ class Learner:
 
         self.policy = PolicyModel(state_dim, action_dim, initial_logstd)
         self.policy_old = PolicyModel(state_dim, action_dim, initial_logstd)
-        self.policy_optimizer = Adam(self.policy.parameters(), lr=learning_rate, eps=1e-5)
+        self.policy_optimizer = AdamW(self.policy.parameters(), lr=learning_rate, eps=1e-5)
 
         self.value = ValueModel(state_dim)
         self.value_old = ValueModel(state_dim)
-        self.value_optimizer = Adam(self.value.parameters(), lr=learning_rate, eps=1e-5)
+        self.value_optimizer = AdamW(self.value.parameters(), lr=learning_rate, eps=1e-5)
 
         self.policy_memory = PolicyMemory()
         self.policy_loss = TrulyPPO(
