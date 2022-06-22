@@ -11,8 +11,7 @@ import gym
 
 class Runner:
     def __init__(self, experiment_type, data, save_path):
-        env_name = make_gym_env(experiment_type, data, visualize=False)
-        self.env = gym.make(env_name, disable_env_checker=True)
+        self.env = make_gym_env(experiment_type, data, visualize=False)
         self.states = self.env.reset()
         self.state_dim = self.env.observation_space.shape[0]
         self.action_dim = self.env.action_space.shape[0]
@@ -31,14 +30,22 @@ class Runner:
         best_rew = 0
         best_idx = 0
 
+        for _ in infinite_range(0):
+            action, _, _ = self.agent.act(self.states)
+            next_state, _, done, _ = self.env.step(action)
+            self.states = next_state
+            
+            if done:
+                self.env.reset()
+                break
+    
         for t in range(tries):
             pose_info = pd.DataFrame()
             for frame in infinite_range(0):
                 curr_pose = {}
                 action, _, _ = self.agent.act(self.states)
 
-                action_gym = np.clip(action, -1.0, 1.0) * self.max_action
-                next_state, reward, done, info = self.env.step(action_gym)
+                next_state, reward, done, info = self.env.step(action)
 
                 pose = asdict(info["obs/dyn_pose"])
                 curr_pose["time"] = frame / fps
