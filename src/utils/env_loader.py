@@ -26,16 +26,19 @@ def make_env(env_type, data_subject, visualize):
         from opensim_env.reward.concrete import RobinHealthyEvaluator
 
         from opensim_env.observation.concrete.robin_healthy import RobinHealthyObserverConfig
+        from opensim_env.reward.concrete.robin_healthy import RobinHealthyEvaluatorConfig
         obs_config = RobinHealthyObserverConfig(
             include_body_parts=True,
             include_imitation=False
         )
 
+        rew_config = RobinHealthyEvaluatorConfig(data=data)
+
         return OpensimEnv(
             OpensimEnvConfig(HEALTHY_PATH, init_pose=data.get_row(0), visualize=visualize),
             lambda c: RobinHealthyObserver(c, data, obs_config),
             DumbExampleController,
-            lambda c: RobinHealthyEvaluator(c, data),
+            lambda c: RobinHealthyEvaluator(c, rew_config),
         )
     elif env_type == "healthy_terrain":
         from opensim_env.models import HEALTHY_ROUGH_TERRAIN_PATH
@@ -43,16 +46,19 @@ def make_env(env_type, data_subject, visualize):
         from opensim_env.reward.concrete import RobinHealthyEvaluator
         
         from opensim_env.observation.concrete.robin_healthy import RobinHealthyObserverConfig
+        from opensim_env.reward.concrete.robin_healthy import RobinHealthyEvaluatorConfig
         obs_config = RobinHealthyObserverConfig(
             include_body_parts=True,
             include_imitation=False
         )
 
+        rew_config = RobinHealthyEvaluatorConfig(data=data)
+
         return OpensimEnv(
             OpensimEnvConfig(HEALTHY_ROUGH_TERRAIN_PATH, init_pose=data.get_row(0), visualize=visualize),
             lambda c: RobinHealthyObserver(c, data, obs_config),
             DumbExampleController,
-            lambda c: RobinHealthyEvaluator(c, data),
+            lambda c: RobinHealthyEvaluator(c, rew_config),
         )
     
     elif env_type == "prosthesis":
