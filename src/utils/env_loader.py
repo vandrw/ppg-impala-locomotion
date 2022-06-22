@@ -35,7 +35,7 @@ def make_env(env_type, data_subject, visualize):
             OpensimEnvConfig(HEALTHY_PATH, init_pose=data.get_row(0), visualize=visualize),
             lambda c: RobinHealthyObserver(c, data, obs_config),
             DumbExampleController,
-            lambda c: RobinHealthyEvaluator(c, data, 1.0, 1.1),
+            lambda c: RobinHealthyEvaluator(c, data),
         )
     elif env_type == "healthy_terrain":
         from opensim_env.models import HEALTHY_ROUGH_TERRAIN_PATH
@@ -52,7 +52,7 @@ def make_env(env_type, data_subject, visualize):
             OpensimEnvConfig(HEALTHY_ROUGH_TERRAIN_PATH, init_pose=data.get_row(0), visualize=visualize),
             lambda c: RobinHealthyObserver(c, data, obs_config),
             DumbExampleController,
-            lambda c: RobinHealthyEvaluator(c, data, 1.0, 1.1),
+            lambda c: RobinHealthyEvaluator(c, data),
         )
     
     elif env_type == "prosthesis":
