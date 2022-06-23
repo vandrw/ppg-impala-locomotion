@@ -18,7 +18,14 @@ class Continuous:
 
     def logprob(self, mean, std, value_data):
         distribution = Normal(mean, std)
-        return distribution.log_prob(value_data).float().to(self.device)
+
+        # Clamp the logprob to avoid numerical error
+        # This will keep the logprob in the range of ~(log(1.0e-8), -log(1.0e-8))
+        logprob = torch.clamp(
+            distribution.log_prob(value_data), 
+            -15, 15
+            )
+        return logprob.float().to(self.device)
 
     def kl_divergence(self, mean1, std1, mean2, std2):
         distribution1 = Normal(mean1, std1)
