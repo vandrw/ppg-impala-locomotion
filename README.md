@@ -27,7 +27,8 @@ For non-Ubuntu distributions, you will have to find a way to build OpenSim-core.
 
 After activating the virtual environment, install additional dependencies. Run the following in a local library folder:
 ```
-pip install python-dateutil pytz wandb gym==0.24.0
+# Gym 0.24.0/1 worked well for me.
+pip install python-dateutil pytz wandb gym
 
 git clone https://github.com/rug-my-leg/opensim-env.git
 cd opensim-env/
@@ -103,7 +104,7 @@ If you already have access to the Peregrine cluster, you can run the commands be
 module load PyTorch/1.10.0-fosscuda-2020b CMake/3.20.1-GCCcore-10.2.0 Eigen/3.3.8-GCCcore-10.2.0 SWIG/4.0.2-GCCcore-10.2.0 OpenBLAS/0.3.12-GCC-10.2.0
 
 mkdir /home/$USER/.libs
-mkdir/home/$USER/.envs
+mkdir /home/$USER/.envs
 
 python -m venv /home/$USER/.envs/osim
 source /home/$USER/.envs/osim/bin/activate
@@ -133,6 +134,7 @@ mkdir build/
 cd build/
 
 export docopt_DIR=/home/$USER/.libs/opensim_dependencies/docopt/lib64/cmake
+export ezc3d_DIR=/home/$USER/.libs/opensim_dependencies/ezc3d/lib64/cmake
 
 cmake ../opensim-core -LAH \
       -DCMAKE_INSTALL_PREFIX=/home/$USER/.libs/opensim-core \
@@ -150,6 +152,8 @@ cmake ../opensim-core -LAH \
 make -j8
 
 # Ignore the python_example failure
+# If other errors occur, run ctest using the --rerun-failed flag
+# If the errors persist after rerunning the tests, try making the build again.
 export LD_LIBRARY_PATH=$LD_LIBRARY_PATH:/home/$USER/.libs/opensim_dependencies/simbody/lib
 ctest --parallel 8 --output-on-failure
 
@@ -160,6 +164,9 @@ export LD_LIBRARY_PATH=/home/$USER/.libs/opensim_dependencies/ipopt/lib:/home/$U
 
 cd /home/$USER/.libs/opensim-core/sdk/Python/
 pip install .
+
+# We do not need the build files anymore.
+rm -rvf /home/$USER/software
 ```
 
 You can now continue installing the other dependencies mentioned above.
