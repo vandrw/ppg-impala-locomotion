@@ -12,8 +12,8 @@ num_workers: 50         # How many agents you want to run asynchronously in Ray.
 n_steps: 1024           # How many steps to perform in the environment before the networks are updated (per worker).
 
 # TrulyPPO
-ppo_epochs: 8           # For how many epochs to update the PPO networks (both value and policy).
-ppo_batchsize: 32       # Indicates how many batches will be used per update. The number of batches is equal to n_steps / batch_size.
+ppo_epochs: 4           # For how many epochs to update the PPO networks (both value and policy).
+ppo_batchsize: 256      # Indicates how many batches will be used per update. The number of batches is equal to n_steps / batch_size.
 ppo_kl_range: 0.05      # Decides the amount of clipping, indicating the (KL) trust region for the policy.
 slope_rollback: 5       # Decides the force of the rollback.
 slope_likelihood: 1     # Decides whether we take into account the likelihood ratio between the old and the new policy when performing the rollback.
@@ -26,11 +26,33 @@ vf_loss_coef: 1.0       # Value function coefficient. Indicates how much the cri
 
 # Auxiliary
 aux_update: 32          # After how many sets of trajectories the Auxiliary is updated.
-aux_epochs: 8           # For how many epochs to train the Auxiliary policy.
-aux_batchsize: 64       # The size of each minibatches, per auxiliary epoch. 
+aux_epochs: 4           # For how many epochs to train the Auxiliary policy.
+aux_batchsize: 256      # The size of each minibatches, per auxiliary epoch. 
 beta_clone: 1.0         # Controls the trade-off between the old and new Auxiliary policy.
 
-# Optimization
-gamma: 0.99             # Discount factor. Reduces the value of future states. 
-lambd: 0.95             # GAE parameter used to reduce variance during training.
-learning_rate: 2.0e-4   # Indicates the step-size taken during gradient descent.
+# V-Trace
+gamma: 0.999            # Discount factor. Reduces the value of future states. 
+lambd: 0.9              # GAE parameter used to reduce variance during training.
+
+# MLP
+learning_rate: 3.0e-5   # Indicates the step-size taken during gradient descent.
+
+# Parameters not yet added
+# These are useful to keep track of changes made to the code.
+optimizer: "RMSprop_Centered_0.9"
+adam_eps: 1.0e-5
+policy_width: 256
+policy_depth: 2
+value_width: 128
+value_depth: 2
+activation: "tanh"
+sigmoid_action: True
+layer_std: 1.41
+
+rho: 1.0                # TODO. See section 4.1 in IMPALA
+logprob_clip: 18.42068  # How much to clip the logprobs before calculating the ratio.
+shuffle_traj: False     # Seems to break the code?
+
+norm_obs: True
+clip_obs: 10.0
+norm_reward: false

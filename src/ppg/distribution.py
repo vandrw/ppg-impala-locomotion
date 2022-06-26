@@ -23,7 +23,7 @@ class Continuous:
         # This will keep the logprob in the range of ~(log(1.0e-8), -log(1.0e-8))
         logprob = torch.clamp(
             distribution.log_prob(value_data), 
-            -15, 15
+            -18.42068, 18.42068
             )
         return logprob.float().to(self.device)
 

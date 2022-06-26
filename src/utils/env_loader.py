@@ -80,6 +80,6 @@ def make_gym_env(env_type, data_subject, visualize):
     env = gym.wrappers.ClipAction(env)
     env = gym.wrappers.NormalizeObservation(env)
     env = gym.wrappers.TransformObservation(env, lambda obs: np.clip(obs, -10, 10))
-    env = gym.wrappers.NormalizeReward(env)
+    # env = gym.wrappers.NormalizeReward(env)
 
     return env

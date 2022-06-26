@@ -16,16 +16,17 @@ class PolicyModel(nn.Module):
 
         self.device = myDevice if myDevice != None else device
         self.nn_layer = nn.Sequential(
-                layer_init(nn.Linear(state_dim, 64)),
+                layer_init(nn.Linear(state_dim, 256)),
                 nn.Tanh(),
-                layer_init(nn.Linear(64, 64)),
+                layer_init(nn.Linear(256, 256)),
                 nn.Tanh()
               ).float().to(self.device)
 
         # The muscle activations in OpenSim are constrained to [0, 1]
         # Therefore, we use a Sigmoid function as the output.
         self.actor_mean = nn.Sequential(
-                layer_init(nn.Linear(64, action_dim), std=0.01),
+                layer_init(nn.Linear(256, action_dim), std=0.01),
+                nn.Sigmoid()
               ).float().to(self.device)
 
         self.actor_logstd = nn.parameter.Parameter(
@@ -33,7 +34,7 @@ class PolicyModel(nn.Module):
             ).float().to(self.device)
             
         self.critic_layer = nn.Sequential(
-                layer_init(nn.Linear(64, 1), std=1.0)
+                layer_init(nn.Linear(256, 1), std=1.0)
               ).float().to(self.device)
 
     def forward(self, states):
@@ -52,11 +53,11 @@ class ValueModel(nn.Module):
 
         self.device = myDevice if myDevice != None else device
         self.nn_layer = nn.Sequential(
-                layer_init(nn.Linear(state_dim, 64)),
+                layer_init(nn.Linear(state_dim, 128)),
                 nn.Tanh(),
-                layer_init(nn.Linear(64, 64)),
+                layer_init(nn.Linear(128, 128)),
                 nn.Tanh(),
-                layer_init(nn.Linear(64, 1), std=1.0)
+                layer_init(nn.Linear(128, 1), std=1.0)
               ).float().to(self.device)
 
     def forward(self, states):
