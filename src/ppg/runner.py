@@ -49,22 +49,27 @@ class Runner:
 
             action, action_mean, action_std = self.agent.act(self.states)
 
-            next_state, reward, done, _ = self.env.step(action)
+            try:
+                next_state, reward, done, _ = self.env.step(action)
+                
+                eps_time += 1
+                total_reward += reward
 
-            eps_time += 1
-            total_reward += reward
+                if self.training_mode:
+                    self.agent.save_eps(
+                        self.states.tolist(),
+                        action,
+                        action_mean,
+                        reward,
+                        float(done),
+                        next_state.tolist(),
+                    )
 
-            if self.training_mode:
-                self.agent.save_eps(
-                    self.states.tolist(),
-                    action,
-                    action_mean,
-                    reward,
-                    float(done),
-                    next_state.tolist(),
-                )
-
-            self.states = next_state
+                self.states = next_state
+            except:
+                # If the agent runs out of imitation data, we reset
+                # the environment.
+                done = True
 
             if done:
                 self.states = self.env.reset()
