@@ -66,7 +66,7 @@ class Runner:
                     )
 
                 self.states = next_state
-            except:
+            except AssertionError:
                 # If the agent runs out of imitation data, we reset
                 # the environment.
                 done = True
