@@ -6,8 +6,11 @@ from pathlib import Path
 import numpy as np
 import pandas as pd
 import argparse
+import logging
 import gym
+import sys
 
+logging.basicConfig(level=logging.INFO, format="%(message)s", stream=sys.stdout)
 
 class Runner:
     def __init__(self, experiment_type, data, save_path):
@@ -16,7 +19,7 @@ class Runner:
         self.state_dim = self.env.observation_space.shape[0]
         self.action_dim = self.env.action_space.shape[0]
 
-        self.agent = Agent(self.state_dim, self.action_dim, -1.34, True)
+        self.agent = Agent(self.state_dim, self.action_dim, -1.34, False)
 
         self.max_action = 1.0
 
@@ -63,7 +66,7 @@ class Runner:
                 self.states = next_state
 
                 if done:
-                    print("{}. Reward: {}, Episode time: {}".format(t + 1, total_reward, frame))
+                    logging.info("{}. Reward: {}, Episode time: {}".format(t + 1, total_reward, frame))
 
                     if total_reward > best_rew:
                         best_pose = pose_info
@@ -74,25 +77,25 @@ class Runner:
                     self.env.reset()
                     break
         
-        print("Saving episode {} with reward {}".format(best_idx, best_rew))
+        logging.info("Saving episode {} with reward {}".format(best_idx, best_rew))
         return best_pose
 
 
 def main(args):
-    print(
+    logging.info(
         "Creating motion with environment '{}' and starting data '{}' at {} FPS...".format(
             args.env, args.data, args.fps
         )
     )
     if args.tries > 1:
-        print("Performing {} tries...".format(args.tries))
+        logging.info("Performing {} tries...".format(args.tries))
 
     runner = Runner(args.env, args.data, args.folder_path)
 
     pose_info = runner.get_motion(args.fps, args.tries)
 
     if not args.csv:
-        with (Path(args.folder_path) / "episode.mot").open("w") as file:
+        with (Path(args.folder_path) / "{}.mot".format(args.output)).open("w") as file:
             file.write(
                 """Coordinates
 version=1
@@ -125,9 +128,9 @@ endheader
                         file.write("\t     {:.8f}".format(row[col]))
                 file.write("\n")
 
-        print("Motion saved at {}".format(str(Path(args.folder_path) / "episode.mot")))
+        print("Motion saved at {}".format(str(Path(args.folder_path) / "{}.mot".format(args.output))))
     else:
-        with (Path(args.folder_path) / "episode.csv").open("w") as file:
+        with (Path(args.folder_path) / "{}.csv".format(args.output)).open("w") as file:
             for col in pose_info.columns:
                 if col == "time":
                     file.write("time")
@@ -144,7 +147,7 @@ endheader
                         file.write(",{:.8f}".format(row[col]))
                 file.write("\n")
 
-        print("Motion saved at {}".format(str(Path(args.folder_path) / "episode.csv")))
+        logging.info("Motion saved at {}".format(str(Path(args.folder_path) / "{}.csv".format(args.output))))
 
 if __name__ == "__main__":
     parser = argparse.ArgumentParser()
@@ -184,7 +187,12 @@ if __name__ == "__main__":
         default=1,
         help="How many tries to perform. If given more than one, the program will calculate multiple episodes and will return the best."
     )
-
+    parser.add_argument(
+        "--output",
+        type=str,
+        default="episode",
+        help="Name of the output file."
+    )
 
     args = parser.parse_args()
     assert args.tries >= 1, "Please provide a value of one or higher!"
