@@ -19,7 +19,7 @@ def main(args):
         save_path=args.folder_path,
     )
 
-    runner.run_episode(0, 0, 0)
+    runner.run_episode()
 
 if __name__ == "__main__":
     parser = argparse.ArgumentParser(description="OpenSim Model Visualizer")

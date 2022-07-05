@@ -8,7 +8,6 @@ comm = MPI.COMM_WORLD
 w_size = comm.Get_size() - 1
 rank = comm.Get_rank()
 
-import gym
 from src.utils.env_loader import make_gym_env
 
 from itertools import count as infinite_range
@@ -17,12 +16,15 @@ import traceback
 import signal
 
 from src.utils.args import get_args
+from src.utils.generate_motion import save_episode
 
 interrupted = False
+
 
 def signal_handler(signum, frame):
     global interrupted
     interrupted = True
+
 
 # Register the signal handler
 signal.signal(signal.SIGUSR1, signal_handler)
@@ -39,13 +41,14 @@ def main_worker(args):
         args.data,
         args.initial_logstd,
         args.train_mode,
+        args.save_pose,
         args.visualize,
         args.n_steps,
         rank,
         save_path=output_path,
     )
 
-    trajectory, i_episode, total_reward, eps_time, done_info = runner.run_episode(rank, 0, 0)
+    trajectory, done_info = runner.run_episode()
 
     # Do not send first episode values to set up the normalizers.
     # data = (trajectory, done_info)
@@ -53,13 +56,11 @@ def main_worker(args):
 
     try:
         for _ in infinite_range(0):
-            trajectory, i_episode, total_reward, eps_time, done_info = runner.run_episode(
-                i_episode, total_reward, eps_time
-            )
+            trajectory, done_info = runner.run_episode()
 
             data = (trajectory, done_info)
             comm.send(data, dest=0)
-            
+
             if interrupted:
                 break
     except Exception as ex:
@@ -103,7 +104,7 @@ def main_head(args):
         args.gamma,
         args.lambd,
         args.learning_rate,
-        args.initial_logstd
+        args.initial_logstd,
     )
 
     del env
@@ -121,11 +122,12 @@ def main_head(args):
     logging.info("Starting training... Workers available: {}".format(w_size))
     try:
         avg_reward = 0
+        max_reward = 0
         avg_ep_time = 0
         data = None
         for epoch in infinite_range(start_epoch):
 
-            data = comm.recv()        
+            data = comm.recv()
             trajectory, done_info = data
 
             states, actions, action_means, action_std, rewards, dones, next_states = trajectory
@@ -139,6 +141,12 @@ def main_head(args):
 
             avg_reward += done_info["total_reward"]
             avg_ep_time += done_info["episode_time"]
+
+            if args.save_pose:
+                if done_info["max_reward"] > max_reward:
+                    max_reward = done_info["max_reward"]
+                    save_episode(done_info["pose"], output_path)
+                    logging.info("Saved new pose: reward {:.2f}".format(max_reward))
 
             if (epoch + 1) % w_size == 0:
                 real_epoch = int(epoch / w_size)
@@ -185,7 +193,7 @@ def main_head(args):
         finish = time.time()
         timedelta = finish - start
         logging.info("Time: {}".format(str(datetime.timedelta(seconds=timedelta))))
-        
+
         comm.Abort()
 
 

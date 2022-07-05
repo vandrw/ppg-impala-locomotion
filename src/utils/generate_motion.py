@@ -3,11 +3,9 @@ from src.utils.env_loader import make_gym_env
 from src.ppg.agent import Agent
 from dataclasses import asdict
 from pathlib import Path
-import numpy as np
 import pandas as pd
 import argparse
 import logging
-import gym
 import sys
 
 logging.basicConfig(level=logging.INFO, format="%(message)s", stream=sys.stdout)
@@ -80,37 +78,19 @@ class Runner:
         logging.info("Saving episode {} with reward {}".format(best_idx, best_rew))
         return best_pose
 
+def save_episode(pose_info, output_path, output_name="episode", csv=True):
+    if not csv:
+        with (Path(output_path) / "{}.mot".format(output_name)).open("w") as file:
+            header = "".join(("Coordinates\n",
+                "version=1\n",
+                "nRows={}\n".format(pose_info.shape[0]),
+                "nColumns={}\n".format(pose_info.shape[1]),
+                "inDegrees=no\n\n",
+                "Units are S.I. units (second, meters, Newtons, ...)\n",
+                "If the header above contains a line with 'inDegrees', this indicates whether rotational values are in degrees (yes) or radians (no).\n\n",
+                "endheader\n"))
 
-def main(args):
-    logging.info(
-        "Creating motion with environment '{}' and starting data '{}' at {} FPS...".format(
-            args.env, args.data, args.fps
-        )
-    )
-    if args.tries > 1:
-        logging.info("Performing {} tries...".format(args.tries))
-
-    runner = Runner(args.env, args.data, args.folder_path)
-
-    pose_info = runner.get_motion(args.fps, args.tries)
-
-    if not args.csv:
-        with (Path(args.folder_path) / "{}.mot".format(args.output)).open("w") as file:
-            file.write(
-                """Coordinates
-version=1
-nRows={}
-nColumns={}
-inDegrees=no
-
-Units are S.I. units (second, meters, Newtons, ...)
-If the header above contains a line with 'inDegrees', this indicates whether rotational values are in degrees (yes) or radians (no).
-
-endheader
-""".format(
-                    pose_info.shape[0], pose_info.shape[1]
-                )
-            )
+            file.write(header)
 
             for col in pose_info.columns:
                 if col == "time":
@@ -127,10 +107,8 @@ endheader
                     else:
                         file.write("\t     {:.8f}".format(row[col]))
                 file.write("\n")
-
-        print("Motion saved at {}".format(str(Path(args.folder_path) / "{}.mot".format(args.output))))
     else:
-        with (Path(args.folder_path) / "{}.csv".format(args.output)).open("w") as file:
+        with (Path(output_path) / "{}.csv".format(output_name)).open("w") as file:
             for col in pose_info.columns:
                 if col == "time":
                     file.write("time")
@@ -147,7 +125,27 @@ endheader
                         file.write(",{:.8f}".format(row[col]))
                 file.write("\n")
 
-        logging.info("Motion saved at {}".format(str(Path(args.folder_path) / "{}.csv".format(args.output))))
+def main(args):
+    logging.info(
+        "Creating motion with environment '{}' and starting data '{}' at {} FPS...".format(
+            args.env, args.data, args.fps
+        )
+    )
+    if args.tries > 1:
+        logging.info("Performing {} tries...".format(args.tries))
+
+    runner = Runner(args.env, args.data, args.folder_path)
+
+    pose_info = runner.get_motion(args.fps, args.tries)
+
+    save_episode(pose_info, args.folder_path, args.output, args.csv)
+
+    if args.csv:
+        ext = "csv"
+    else:
+        ext = "mot"
+
+    logging.info("Motion saved at {}".format(str(Path(args.folder_path) / "{}.{}".format(args.output, ext))))
 
 if __name__ == "__main__":
     parser = argparse.ArgumentParser()

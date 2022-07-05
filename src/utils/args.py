@@ -60,6 +60,10 @@ def get_args():
         "--log_wandb", action="store_true", help="Whether to save output on wandb."
     )
 
+    parser.add_argument(
+        "--save_pose", action="store_true", help="Enables saving the pose of the best episode to a file."
+    )
+
     # Worker
     parser.add_argument(
         "--train_mode",

@@ -27,21 +27,20 @@ def main_worker(args):
         args.initial_logstd,
         args.train_mode,
         args.visualize,
+        args.save_pose,
         args.n_steps,
         rank,
         save_path=output_path,
     )
 
-    trajectory, i_episode, total_reward, eps_time, done_info = runner.run_episode(rank, 0, 0)
+    trajectory, done_info = runner.run_episode()
 
-    data = (trajectory, done_info)
-    comm.send(data, dest=0)
+    # data = (trajectory, done_info)
+    # comm.send(data, dest=0)
 
     try:
         for _ in infinite_range(0):
-            trajectory, i_episode, total_reward, eps_time, done_info = runner.run_episode(
-                i_episode, total_reward, eps_time
-            )
+            trajectory, done_info = runner.run_episode()
 
             data = (trajectory, done_info)
             comm.send(data, dest=0)
