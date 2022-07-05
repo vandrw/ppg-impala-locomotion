@@ -52,13 +52,31 @@ def make_env(env_type, data_subject, visualize):
             include_imitation=False
         )
 
-        rew_config = RobinHealthyEvaluatorConfig(data=data)
+        rew_config = RobinHealthyEvaluatorConfig(data=data, target_pelvis_vel=1.2)
 
         return OpensimEnv(
             OpensimEnvConfig(HEALTHY_ROUGH_TERRAIN_PATH, init_pose=data.get_row(0), visualize=visualize),
             lambda c: RobinHealthyObserver(c, data, obs_config),
             DumbExampleController,
             lambda c: RobinHealthyEvaluator(c, rew_config),
+        )
+    
+    if env_type == "healthy_leanne":
+        from opensim_env.models import HEALTHY_PATH
+        from opensim_env.observation.concrete import RobinHealthyObserver
+        from opensim_env.reward.concrete.reward_22musc import RutgerHealthyEvaluator
+
+        from opensim_env.observation.concrete.robin_healthy import RobinHealthyObserverConfig
+        obs_config = RobinHealthyObserverConfig(
+            include_body_parts=True,
+            include_imitation=False
+        )
+
+        return OpensimEnv(
+            OpensimEnvConfig(HEALTHY_PATH, init_pose=data.get_row(0), visualize=visualize),
+            lambda c: RobinHealthyObserver(c, data, obs_config),
+            DumbExampleController,
+            lambda c: RutgerHealthyEvaluator(c, data, 1.0, 1.2),
         )
     
     elif env_type == "prosthesis":
