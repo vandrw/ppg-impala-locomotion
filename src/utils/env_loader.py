@@ -39,7 +39,7 @@ def make_env(env_type, data_subject, visualize):
 
         rew_config = RobinHealthyEvaluatorConfig(
             data=data,
-            target_pelvis_vel=1.1,
+            target_pelvis_vel=1.17,
             include_imi_velocity=True,
             include_goal=True,
         )
